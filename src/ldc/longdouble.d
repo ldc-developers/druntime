@@ -14,14 +14,18 @@ module ldc.longdouble;
 *          http://www.boost.org/LICENSE_1_0.txt)
 */
 
-version(Win64):
+version(Windows):
 extern(C):
+@trusted: // All functions here operate on floating point and integer values only.
+nothrow:
+pure:
 
 /*
  * The C runtime environment of Visual C++ has no support for long double
  * aka real datatype. This file adds the missing functions.
  */
 
+/+++++
 // Computes the cosine.
 real cosl(real x)
 {
@@ -266,3 +270,4 @@ real scalbnl (real x, int n)
 */
     return 0.0;
 }
++++++/
