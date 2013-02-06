@@ -77,8 +77,8 @@ real sin(real x) @safe pure nothrow;       /* intrinsic */
 version (LDC)
 {
     // FIXME: stdc.llroundl not available under Windows
-    version (Windows) long rndtol(real x) @safe pure nothrow { assert(0); }
-    else              long rndtol(real x) @safe pure nothrow { return stdc.llroundl(x); }
+    version (Windows) long rndtol(real x)                       { assert(0); }
+    else              long rndtol(real x) @trusted pure nothrow { return stdc.llroundl(x); }
 }
 else
 long rndtol(real x) @safe pure nothrow;    /* intrinsic */
@@ -125,7 +125,7 @@ extern (C) real rndtonl(real x);
  */
 
 version (LDC)
-    real ldexp(real n, int exp) @safe pure nothrow { return stdc.ldexpl(n, exp); }
+    real ldexp(real n, int exp) @trusted pure nothrow { return stdc.ldexpl(n, exp); }
 else
 real ldexp(real n, int exp) @safe pure nothrow;    /* intrinsic */
 
@@ -145,7 +145,7 @@ unittest {
  */
 version (LDC)
 {
-    @trusted pure nothrow real fabs(real x)
+    real fabs(real x) @trusted pure nothrow
     {
         version (D_InlineAsm_X86)
         {
@@ -175,11 +175,11 @@ real fabs(real x) @safe pure nothrow;      /* intrinsic */
 version (LDC)
 {
   version (LDC_LLVM_303)
-    real rint(real x) @safe pure nothrow { return llvm_rint(x); }
+    real rint(real x) @safe pure nothrow    { return llvm_rint(x); }
   else version (Windows) // FIXME: stdc.rintl not available under Windows
-    real rint(real x) @safe pure nothrow { assert(0); }
+    real rint(real x)                       { assert(0); }
   else
-    real rint(real x) @safe pure nothrow { return stdc.rintl(x); }
+    real rint(real x) @trusted pure nothrow { return stdc.rintl(x); }
 }
 else
 real rint(real x) @safe pure nothrow;      /* intrinsic */

@@ -15,6 +15,15 @@ module core.stdc.stdlib;
 private import core.stdc.config;
 public import core.stdc.stddef; // for size_t, wchar_t
 
+version( Windows )
+{
+    version( LDC )
+        version = MSVCRT;
+    else version( DigitalMars )
+        version( Win64 )
+            version = MSVCRT;
+}
+
 extern (C):
 @system:
 nothrow:
@@ -51,25 +60,33 @@ else static assert( false, "Unsupported platform" );
 double  atof(in char* nptr);
 int     atoi(in char* nptr);
 c_long  atol(in char* nptr);
-long    atoll(in char* nptr);
 
 double  strtod(in char* nptr, char** endptr);
-float   strtof(in char* nptr, char** endptr);
 c_long  strtol(in char* nptr, char** endptr, int base);
-long    strtoll(in char* nptr, char** endptr, int base);
 c_ulong strtoul(in char* nptr, char** endptr, int base);
-ulong   strtoull(in char* nptr, char** endptr, int base);
 
-version (Win64)
+version( MSVCRT )
 {
-    real strtold(in char* nptr, char** endptr)
-    {   // Fake it 'till we make it
-        return strtod(nptr, endptr);
-    }
+    private long _atoi64(in char* nptr);
+    long  atoll   (in char* nptr) { return _atoi64(nptr); }
+
+    // wrappers for double precision
+    float strtof  (in char* nptr, char** endptr) { return strtod(nptr, endptr); }
+    real  strtold (in char* nptr, char** endptr) { return strtod(nptr, endptr); }
+
+    private long  _strtoi64 (in char* nptr, char** endptr, int base);
+    private ulong _strtoui64(in char* nptr, char** endptr, int base);
+    long  strtoll (in char* nptr, char** endptr, int base) { return _strtoi64 (nptr, endptr, base); }
+    ulong strtoull(in char* nptr, char** endptr, int base) { return _strtoui64(nptr, endptr, base); }
 }
 else
 {
-    real strtold(in char* nptr, char** endptr);
+    long  atoll   (in char* nptr);
+
+    float strtof  (in char* nptr, char** endptr);
+    real  strtold (in char* nptr, char** endptr);
+    long  strtoll (in char* nptr, char** endptr, int base);
+    ulong strtoull(in char* nptr, char** endptr, int base);
 }
 
 // No unsafe pointer manipulation.
@@ -91,7 +108,14 @@ void    free(void* ptr);
 void    abort();
 void    exit(int status);
 int     atexit(void function() func);
-void    _Exit(int status);
+
+version( MSVCRT )
+{
+    private void _exit(int status);
+    void    _Exit(int status) { _exit(status); }
+}
+else
+    void    _Exit(int status);
 
 char*   getenv(in char* name);
 int     system(in char* string);
@@ -121,15 +145,6 @@ version( DigitalMars )
 {
     // See malloc comment about @trusted.
     void* alloca(size_t size); // non-standard
-}
-
-version (Win64)
-{
-    ulong  _strtoui64(in char *,char **,int);
-    ulong  _wcstoui64(in wchar *,wchar **,int);
-
-    long  _strtoi64(in char *,char **,int);
-    long  _wcstoi64(in wchar *,wchar **,int);
 }
 
 version( LDC )
