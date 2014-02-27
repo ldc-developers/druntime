@@ -65,17 +65,17 @@ unittest
  */
 class AssertError : Error
 {
-    this( string file, size_t line )
+    @safe pure nothrow this( string file, size_t line )
     {
         this(cast(Throwable)null, file, line);
     }
 
-    this( Throwable next, string file = __FILE__, size_t line = __LINE__ )
+    @safe pure nothrow this( Throwable next, string file = __FILE__, size_t line = __LINE__ )
     {
         this( "Assertion failure", file, line, next);
     }
 
-    this( string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null )
+    @safe pure nothrow this( string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null )
     {
         super( msg, file, line, next );
     }
