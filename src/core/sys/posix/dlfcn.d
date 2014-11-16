@@ -165,6 +165,18 @@ else version( FreeBSD )
         void*        dli_saddr;
     }
 }
+else version( AIX )
+{
+    enum RTLD_LAZY      = 0x00000004;
+    enum RTLD_NOW       = 0x00000002;
+    enum RTLD_GLOBAL    = 0x00010000;
+    enum RTLD_LOCAL     = 0x00080000;
+
+    int   dlclose(void*);
+    char* dlerror();
+    void* dlopen(in char*, int);
+    void* dlsym(void*, in char*);
+}
 else version( Solaris )
 {
     enum RTLD_LAZY      = 1;

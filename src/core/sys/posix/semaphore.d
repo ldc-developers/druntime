@@ -81,6 +81,15 @@ else version( FreeBSD )
 
     enum SEM_FAILED = cast(sem_t*) null;
 }
+else version (AIX)
+{
+    struct sem_t
+    {
+        /* Managed by OS */
+    }
+
+    enum SEM_FAILED = cast(sem_t*) -1;
+}
 else version (Solaris)
 {
     struct sem_t
@@ -134,6 +143,10 @@ else version( OSX )
     int sem_timedwait(sem_t*, in timespec*);
 }
 else version( FreeBSD )
+{
+    int sem_timedwait(sem_t*, in timespec*);
+}
+else version (AIX)
 {
     int sem_timedwait(sem_t*, in timespec*);
 }

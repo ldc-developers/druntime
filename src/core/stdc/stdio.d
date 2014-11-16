@@ -166,6 +166,19 @@ else version ( FreeBSD )
         long        _mbstateL;
     }
 }
+else version (AIX)
+{
+    enum
+    {
+        BUFSIZ       = 4096,
+        EOF          = -1,
+        FOPEN_MAX    = 32767,
+        FILENAME_MAX = 255,
+        TMP_MAX      = 16384,
+        L_tmpnam     = 21
+    }
+    enum int _NFILE = 16;
+}
 else version (Solaris)
 {
     enum
@@ -391,6 +404,42 @@ else version( FreeBSD )
     alias __sFILE _iobuf;
     ///
     alias shared(__sFILE) FILE;
+}
+else version (AIX)
+{
+    alias c_long fpos_t;
+
+    struct _iobuf
+    {
+        ubyte*_ptr;
+        version (D_LP64) {}
+        else
+        {
+            int _cnt;
+        }
+        ubyte* _base;
+        ubyte* _bufendp;
+        version (D_LP64) {}
+        else
+        {
+            short _flag;
+            short _file;
+            int __stdioid;
+        }
+        char* __newbase;
+        void* _lock;
+        version (D_LP64)
+        {
+            int _cnt;
+            int _file;
+            int __stdioid;
+            short _flag;
+            short _unused;
+            c_long[4] _unused1;
+        }
+    }
+
+    alias shared(_iobuf) FILE;
 }
 else version (Solaris)
 {
@@ -636,6 +685,23 @@ else version( FreeBSD )
     alias __stdoutp stdout;
     ///
     alias __stderrp stderr;
+}
+else version (AIX)
+{
+    enum
+    {
+        _IOFBF = 0x00,
+        _IOLBF = 0x40,
+        _IONBF = 0x04,
+        _IOEOF = 0x10,
+        _IOERR = 0x20,
+    }
+
+    private extern shared FILE[_NFILE] _iob;
+
+    shared stdin  = &_iob[0];
+    shared stdout = &_iob[1];
+    shared stderr = &_iob[2];
 }
 else version (Solaris)
 {
@@ -1037,6 +1103,21 @@ else version( FreeBSD )
   ///
     int  snprintf(char* s, size_t n, in char* format, ...);
     ///
+    int  vsnprintf(char* s, size_t n, in char* format, va_list arg);
+}
+else version (AIX)
+{
+  // No unsafe pointer manipulation.
+  @trusted
+  {
+    void rewind(FILE* stream);
+    pure void clearerr(FILE* stream);
+    pure int  feof(FILE* stream);
+    pure int  ferror(FILE* stream);
+    int  fileno(FILE *);
+  }
+
+    int  snprintf(char* s, size_t n, in char* format, ...);
     int  vsnprintf(char* s, size_t n, in char* format, va_list arg);
 }
 else version (Solaris)
