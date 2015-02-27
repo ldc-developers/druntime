@@ -270,13 +270,22 @@ extern (C) int _d_run_main(int argc, char **argv, MainFunc mainFunc)
     }
     version (CRuntime_Microsoft)
     {
-        auto fp = __iob_func();
-        stdin = &fp[0];
-        stdout = &fp[1];
-        stderr = &fp[2];
+        static if (__traits(compiles, __acrt_iob_func(0))) // requires MSVCRT >= 14 (VS 2015)
+        {
+            stdin  = __acrt_iob_func(0);
+            stdout = __acrt_iob_func(1);
+            stderr = __acrt_iob_func(2);
+        }
+        else
+        {
+            auto fp = __iob_func();
+            stdin  = &fp[0];
+            stdout = &fp[1];
+            stderr = &fp[2];
 
-        // ensure that sprintf generates only 2 digit exponent when writing floating point values
-        _set_output_format(_TWO_DIGIT_EXPONENT);
+            // ensure that *printf generates only 2 digit exponent when writing floating point values
+            _set_output_format(_TWO_DIGIT_EXPONENT);
+        }
 
         // enable full precision for reals
         version(Win64)
