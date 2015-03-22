@@ -638,7 +638,7 @@ class TypeInfo_AssociativeArray : TypeInfo
 
     override hash_t getHash(in void* p) nothrow @trusted const
     {
-        return _aaGetHash(cast(void*)p, this);
+        return _aaGetHash(cast(const void**)p, this);
     }
 
     // BUG: need to add the rest of the functions
@@ -1824,7 +1824,7 @@ body
 extern (C) void _d_monitor_create(Object) nothrow;
 extern (C) void _d_monitor_destroy(Object) nothrow;
 extern (C) void _d_monitor_lock(Object) nothrow;
-extern (C) int  _d_monitor_unlock(Object) nothrow;
+extern (C) void _d_monitor_unlock(Object) nothrow;
 
 extern (C) void _d_monitordelete(Object h, bool det)
 {
@@ -1967,11 +1967,11 @@ extern (C)
     // from druntime/src/rt/aaA.d
 
     // size_t _aaLen(in void* p) pure nothrow @nogc;
-    private void* _aaGetX(void** paa, const TypeInfo keyti, in size_t valuesize, in void* pkey) pure nothrow;
+    private void* _aaGetX(void** paa, const TypeInfo keyti, in size_t valuesize, in void* pkey);
     // inout(void)* _aaGetRvalueX(inout void* p, in TypeInfo keyti, in size_t valuesize, in void* pkey);
-    inout(void)[] _aaValues(inout void* p, in size_t keysize, in size_t valuesize, const TypeInfo tiValArray) pure nothrow;
-    inout(void)[] _aaKeys(inout void* p, in size_t keysize, const TypeInfo tiKeyArray) pure nothrow;
-    void* _aaRehash(void** pp, in TypeInfo keyti) pure nothrow;
+    inout(void[]) _aaValues(inout void* aa, in size_t keysize, in size_t valuesize, const TypeInfo tiValueArray) pure nothrow;
+    inout(void[]) _aaKeys(inout void* aa, in size_t keysize, const TypeInfo tiKeyArray) pure nothrow;
+    void* _aaRehash(void** paa, in TypeInfo keyti) pure nothrow;
 
     // alias _dg_t = extern(D) int delegate(void*);
     // int _aaApply(void* aa, size_t keysize, _dg_t dg);
@@ -1987,7 +1987,7 @@ extern (C)
     void _aaRangePopFront(ref AARange r) pure nothrow @nogc;
 
     int _aaEqual(in TypeInfo tiRaw, in void* e1, in void* e2);
-    hash_t _aaGetHash(in void* aa, in TypeInfo tiRaw) nothrow;
+    hash_t _aaGetHash(in void** paa, in TypeInfo tiRaw) nothrow;
 
     /*
         _d_assocarrayliteralTX marked as pure, because aaLiteral can be called from pure code.
@@ -2042,7 +2042,7 @@ V[K] dup(T : V[K], K, V)(T aa)
     //foreach (k, ref v; aa)
     //    result[k] = v;  // Bug13701 - won't work if V is not mutable
 
-    ref V duplicateElem(ref K k, ref const V v) @trusted pure nothrow
+    ref V duplicateElem(ref K k, ref const V v) @trusted
     {
         import core.stdc.string : memcpy;
 
