@@ -62,8 +62,8 @@ private
         }
         else version (CRuntime_Microsoft)
         {
-            pragma(lib, "libcmt.lib");
-            pragma(lib, "oldnames.lib");
+            // pragma(lib, "libcmt.lib");
+            // pragma(lib, "oldnames.lib");
         }
         import core.sys.windows.windows;
 
