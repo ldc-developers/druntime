@@ -32,8 +32,8 @@ private
   }
 }
 
-// uncomment for MSVCRT >= 14 (VS 2015)
-//version(LDC) { version(Win64) version = LDC_MSVCRT14; }
+// comment the following line for MSVCRT < 14 (Visual Studio 2013 and older)
+version(LDC) { version(Win64) version = LDC_MSVCRT14; }
 
 extern (C):
 @system:
