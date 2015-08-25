@@ -313,10 +313,10 @@ version( LDC )
     }
 
     pragma(LDC_va_start)
-        void va_start(T)(va_list ap, ref T);
+        void va_start(T)(va_list ap, ref T) @nogc nothrow;
 
     private pragma(LDC_va_arg)
-        T va_arg_intrinsic(T)(va_list ap);
+        T va_arg_intrinsic(T)(va_list ap) @nogc nothrow;
 
     T va_arg(T)(ref va_list ap)
     {
@@ -485,10 +485,10 @@ version( LDC )
     }
 
     pragma(LDC_va_end)
-        void va_end(va_list ap);
+        void va_end(va_list ap) @nogc nothrow;
 
     pragma(LDC_va_copy)
-        void va_copy(out va_list dest, va_list src);
+        void va_copy(out va_list dest, va_list src) @nogc nothrow;
 }
 else version( X86 )
 {
