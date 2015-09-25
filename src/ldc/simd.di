@@ -1,6 +1,7 @@
 module ldc.simd;
 
 import core.simd;
+import ldc.llvmir;
 
 pure:
 nothrow:
@@ -97,8 +98,7 @@ private template llvmVecType(V)
     }
 }
 
-pragma(LDC_inline_ir)
-    R inlineIR(string s, R, P...)(P);
+alias inlineIR = __ir;
 
 /**
 This template provides access to
