@@ -12,6 +12,7 @@ module rt.sections_elf_shared;
 
 version (CRuntime_Glibc) enum SharedELF = true;
 else version (FreeBSD) enum SharedELF = true;
+else version (NetBSD) enum SharedELF = true;
 else enum SharedELF = false;
 
 version (OSX) enum SharedDarwin = true;
@@ -35,6 +36,12 @@ else version (FreeBSD)
     import core.sys.freebsd.dlfcn;
     import core.sys.freebsd.sys.elf;
     import core.sys.freebsd.sys.link_elf;
+}
+else version (NetBSD)
+{
+    import core.sys.netbsd.dlfcn;
+    import core.sys.netbsd.sys.elf;
+    import core.sys.netbsd.sys.link_elf;
 }
 else version (OSX)
 {
@@ -139,6 +146,7 @@ __gshared bool _isRuntimeInitialized;
 
 
 version (FreeBSD) private __gshared void* dummy_ref;
+version (NetBSD) private __gshared void* dummy_ref;
 
 /****
  * Gets called on program startup just before GC is initialized.
@@ -148,6 +156,7 @@ void initSections()
     _isRuntimeInitialized = true;
     // reference symbol to support weak linkage
     version (FreeBSD) dummy_ref = &_d_dso_registry;
+    version (NetBSD) dummy_ref = &_d_dso_registry;
 }
 
 
@@ -277,6 +286,7 @@ private:
 
 // start of linked list for ModuleInfo references
 version (FreeBSD) deprecated extern (C) __gshared void* _Dmodule_ref;
+version (NetBSD) deprecated extern (C) __gshared void* _Dmodule_ref;
 
 version (Shared)
 {
@@ -772,6 +782,8 @@ nothrow:
                     strtab = cast(const(char)*)dyn.d_un.d_ptr;
                 else version (FreeBSD)
                     strtab = cast(const(char)*)(info.dlpi_addr + dyn.d_un.d_ptr); // relocate
+                else version (NetBSD)
+                    strtab = cast(const(char)*)(info.dlpi_addr + dyn.d_un.d_ptr); // relocate
                 else
                     static assert(0, "unimplemented");
                 break;
@@ -907,6 +919,23 @@ else version (FreeBSD) bool findImageHeaderForAddr(in void* addr, dl_phdr_info* 
 {
     return !!_rtld_addr_phdr(addr, result);
 }
+else version (NetBSD) bool findImageHeaderForAddr(in void* addr, dl_phdr_info* result=null) nothrow @nogc
+{
+    static struct DG { const(void)* addr; dl_phdr_info* result; }
+
+    extern(C) int callback(dl_phdr_info* info, size_t sz, void* arg) nothrow @nogc
+    {
+        auto p = cast(DG*)arg;
+        if (findSegmentForAddr(*info, p.addr))
+        {
+            if (p.result !is null) *p.result = *info;
+            return 1; // break;
+        }
+        return 0; // continue iteration
+    }
+    auto dg = DG(addr, result);
+    return dl_iterate_phdr(&callback, &dg) != 0;
+}
 else version (OSX) bool findImageHeaderForAddr(in void* addr, mach_header** result=null) nothrow @nogc
 {
     auto header = _dyld_get_image_header_containing_address(addr);
@@ -938,12 +967,14 @@ static if (SharedELF) bool findSegmentForAddr(in ref dl_phdr_info info, in void*
 version (linux) import core.sys.linux.errno : program_invocation_name;
 // should be in core.sys.freebsd.stdlib
 version (FreeBSD) extern(C) const(char)* getprogname() nothrow @nogc;
+version (NetBSD) extern(C) const(char)* getprogname() nothrow @nogc;
 version (OSX) extern(C) const(char)* getprogname() nothrow @nogc;
 
 @property const(char)* progname() nothrow @nogc
 {
     version (linux) return program_invocation_name;
     version (FreeBSD) return getprogname();
+    version (NetBSD) return getprogname();
     version (OSX) return getprogname();
 }
 
@@ -1024,6 +1055,8 @@ const(void)[] getCopyRelocSection() nothrow
     version (linux)
         enum ElfW!"Addr" exeBaseAddr = 0;
     else version (FreeBSD)
+        enum ElfW!"Addr" exeBaseAddr = 0;
+    else version (NetBSD)
         enum ElfW!"Addr" exeBaseAddr = 0;
 
     dl_phdr_info info = void;

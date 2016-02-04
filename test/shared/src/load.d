@@ -2,6 +2,7 @@ import core.runtime, core.stdc.stdio, core.thread;
 
 version (linux) import core.sys.linux.dlfcn;
 else version (FreeBSD) import core.sys.freebsd.dlfcn;
+else version (NetBSD) import core.sys.netbsd.dlfcn;
 else version (OSX) import core.sys.osx.dlfcn;
 else static assert(0, "unimplemented");
 
