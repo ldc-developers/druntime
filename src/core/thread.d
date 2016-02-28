@@ -3922,6 +3922,10 @@ version( LDC )
         version( X86 ) version = CheckFiberMigration;
         version( X86_64 ) version = CheckFiberMigration;
     }
+    else version( Windows )
+    {
+        version( X86 ) version = CheckFiberMigration;
+    }
 }
 
 // Fiber support for SjLj style exceptions

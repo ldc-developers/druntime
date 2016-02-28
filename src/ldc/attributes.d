@@ -57,3 +57,21 @@ struct section {
 struct target {
     string specifier;
 }
+
+/**
+ * When applied to a function and building for Win32, creates a SAFESEH
+ * entry in the binary, so that the function is considered safe to be called
+ * as an exception handler.
+ *
+ * Examples:
+ * ---
+ * import ldc.attributes;
+ *
+ * @safeseh() extern(C) int myExceptionHandler(void*, void*, void*, void*)
+ * {
+ *     return ExceptionContinueSearch;
+ * }
+ * ---
+ */
+struct safeseh {
+};
