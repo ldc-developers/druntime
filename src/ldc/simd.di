@@ -189,6 +189,11 @@ if(is(typeof(llvmVecType!V)) && i < numElements!V)
 
     alias inlineIR!(ir, V, V, BaseType!V) insertelement;
 }
+
+// Syntax of load changed with LLVM 3.7
+version (LDC_LLVM_305) version = LDC_LLVM_PRE307;
+version (LDC_LLVM_306) version = LDC_LLVM_PRE307;
+
 /**
 loadUnaligned: Loads a vector from an unaligned pointer.
 Example:
@@ -204,12 +209,42 @@ if(is(typeof(llvmVecType!V)))
     alias BaseType!V T;
     enum llvmT = llvmType!T;
     enum llvmV = llvmVecType!V;
-    enum ir = `
-        %p = bitcast `~llvmT~`* %0 to `~llvmV~`*
-        %r = load `~llvmV~`* %p, align 1
-        ret `~llvmV~` %r`;
+    version (LDC_LLVM_PRE307)
+        enum ir = `
+            %p = bitcast `~llvmT~`* %0 to `~llvmV~`*
+            %r = load `~llvmV~`* %p, align 1
+            ret `~llvmV~` %r`;
+    else
+        enum ir = `
+            %p = bitcast `~llvmT~`* %0 to `~llvmV~`*
+            %r = load `~llvmV~`, `~llvmV~`* %p, align 1
+            ret `~llvmV~` %r`;
 
     alias inlineIR!(ir, V, T*) loadUnaligned;
+}
+
+unittest
+{
+    float[4] f4buf;
+    double[2] f8buf;
+    ubyte[16] u1buf;
+    ushort[8] u2buf;
+    uint[4] u4buf;
+    ulong[2] u8buf;
+    byte[16] i1buf;
+    short[8] i2buf;
+    int[4] i4buf;
+    long[2] i8buf;
+    loadUnaligned!float4(f4buf.ptr);
+    loadUnaligned!double2(f8buf.ptr);
+    loadUnaligned!ubyte16(u1buf.ptr);
+    loadUnaligned!ushort8(u2buf.ptr);
+    loadUnaligned!uint4(u4buf.ptr);
+    loadUnaligned!ulong2(u8buf.ptr);
+    loadUnaligned!byte16(i1buf.ptr);
+    loadUnaligned!short8(i2buf.ptr);
+    loadUnaligned!int4(i4buf.ptr);
+    loadUnaligned!long2(i8buf.ptr);
 }
 
 private enum Cond{ eq, ne, gt, ge }
@@ -270,4 +305,3 @@ alias cmpMask!(Cond.eq) equalMask;
 alias cmpMask!(Cond.ne) notEqualMask; /// Ditto
 alias cmpMask!(Cond.gt) greaterMask; /// Ditto
 alias cmpMask!(Cond.ge) greaterOrEqualMask; /// Ditto
-
