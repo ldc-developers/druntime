@@ -52,6 +52,10 @@ else version( FreeBSD )
 {
     time_t timegm(tm*); // non-standard
 }
+else version (AIX)
+{
+    // Not supported.
+}
 else version (Solaris)
 {
     time_t timegm(tm*); // non-standard
@@ -118,6 +122,13 @@ else version (FreeBSD)
 else version (OSX)
 {
     // No CLOCK_MONOTONIC defined
+}
+else version (AIX)
+{
+    enum : clockid_t
+    {
+        CLOCK_MONOTONIC = 10,
+    }
 }
 else version (Solaris)
 {
@@ -245,6 +256,38 @@ else version( FreeBSD )
     int timer_getoverrun(timer_t);
     int timer_settime(timer_t, int, in itimerspec*, itimerspec*);
 }
+else version (AIX)
+{
+    enum : clockid_t
+    {
+        CLOCK_PROCESS_CPUTIME_ID = 11,
+        CLOCK_THREAD_CPUTIME_ID  = 12,
+    }
+    struct itimerspec {
+        timespec it_interval;
+        timespec it_value;
+    }
+
+    enum : clockid_t
+    {
+        CLOCK_REALTIME = 9,
+    }
+    enum TIMER_ABSTIME = 999;
+
+    alias long clockid_t; // <sys/_types.h>
+    alias long timer_t;
+
+    int clock_getres(clockid_t, timespec*);
+    int clock_gettime(clockid_t, timespec*);
+    int clock_settime(clockid_t, in timespec*);
+    int clock_getcpuclockid(pid_t, clockid_t*);
+    int nanosleep(in timespec*, timespec*);
+    int timer_create(clockid_t, sigevent*, timer_t*);
+    int timer_delete(timer_t);
+    int timer_gettime(timer_t, itimerspec*);
+    int timer_getoverrun(timer_t);
+    int timer_settime(timer_t, int, in itimerspec*, itimerspec*);
+}
 else version (Solaris)
 {
     enum CLOCK_PROCESS_CPUTIME_ID = 5; // <sys/time_impl.h>
@@ -338,6 +381,13 @@ else version( FreeBSD )
     tm*   gmtime_r(in time_t*, tm*);
     tm*   localtime_r(in time_t*, tm*);
 }
+else version (AIX)
+{
+    char* asctime_r(in tm*, char*);
+    char* ctime_r(in time_t*, char*);
+    tm*   gmtime_r(in time_t*, tm*);
+    tm*   localtime_r(in time_t*, tm*);
+}
 else version (Solaris)
 {
     char* asctime_r(in tm*, char*);
@@ -389,6 +439,14 @@ else version( OSX )
 else version( FreeBSD )
 {
     //tm*   getdate(in char*);
+    char* strptime(in char*, in char*, tm*);
+}
+else version (AIX)
+{
+    extern __gshared int    daylight;
+    extern __gshared c_long timezone;
+
+    tm*   getdate(in char*);
     char* strptime(in char*, in char*, tm*);
 }
 else version (Solaris)

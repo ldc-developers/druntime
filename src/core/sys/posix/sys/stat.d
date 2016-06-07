@@ -776,6 +776,80 @@ else version( FreeBSD )
     extern (D) bool S_ISLNK( mode_t mode )  { return S_ISTYPE( mode, S_IFLNK );  }
     extern (D) bool S_ISSOCK( mode_t mode ) { return S_ISTYPE( mode, S_IFSOCK ); }
 }
+else version (AIX)
+{
+    struct stat_t
+    {
+        dev_t     st_dev;
+        ino_t     st_ino;
+        mode_t    st_mode;
+        nlink_t   st_nlink;
+        ushort_t  st_flag;
+        uid_t     st_uid;
+        gid_t     st_gid;
+
+        dev_t    st_rdev;
+        version (D_LP64)
+            int   st_ssize;
+        else
+            off_t st_size;
+        version (false /*_XOPEN_SOURCE>=700*/)
+        {
+            st_timespec_t st_atim;
+            st_timespec_t st_mtim;
+            st_timespec_t st_ctim;
+        }
+        else
+        {
+            time_t st_atime;
+            int    st_atime_n;
+            time_t st_mtime;
+            int    st_mtime_n;
+            time_t st_ctime;
+            int    st_ctime_n;
+        }
+        blksize_t st_blksize;
+        blkcnt_t  st_blocks;
+        int       st_vfstype;
+        uint_t    st_vfs;
+        uint_t    st_type;
+        uint_t    st_gen;
+        uint_t    st_reserved[9];
+        version (D_LP64)
+        {
+            uint_t st_padto_ll;
+            off_t  st_size;
+        }
+    }
+
+    enum S_IFMT = 0xF000; // octal 0170000
+    enum
+    {
+        S_IFSOCK = 0xC000, // octal 0140000
+        S_IFLNK  = 0xA000, // octal 0120000
+        S_IFREG  = 0x8000, // octal 0100000
+        S_IFDIR  = 0x4000, // octal 0040000
+        S_IFBLK  = 0x6000, // octal 0060000
+        S_IFCHR  = 0x2000, // octal 0020000
+        S_IFIFO  = 0x1000, // octal 0010000
+    }
+
+    private
+    {
+        extern (D) bool S_ISTYPE( mode_t mode, uint mask )
+        {
+            return ( mode & S_IFMT ) == mask;
+        }
+    }
+
+    extern (D) bool S_ISBLK( mode_t mode )  { return S_ISTYPE( mode, S_IFBLK );  }
+    extern (D) bool S_ISCHR( mode_t mode )  { return S_ISTYPE( mode, S_IFCHR );  }
+    extern (D) bool S_ISDIR( mode_t mode )  { return S_ISTYPE( mode, S_IFDIR );  }
+    extern (D) bool S_ISFIFO( mode_t mode ) { return S_ISTYPE( mode, S_IFIFO );  }
+    extern (D) bool S_ISREG( mode_t mode )  { return S_ISTYPE( mode, S_IFREG );  }
+    extern (D) bool S_ISLNK( mode_t mode )  { return S_ISTYPE( mode, S_IFLNK );  }
+    extern (D) bool S_ISSOCK( mode_t mode ) { return S_ISTYPE( mode, S_IFSOCK ); }
+}
 else version (Solaris)
 {
     private enum _ST_FSTYPSZ = 16;
@@ -890,6 +964,8 @@ else version (Solaris)
             alias stat32_t stat_t;
 
     }
+
+    pragma(message, "TODO: Add 64bit / _LARGEFILE support")
 
     enum S_IRUSR = 0x100;
     enum S_IWUSR = 0x080;
@@ -1055,6 +1131,10 @@ version( CRuntime_Glibc )
     int   lstat(in char*, stat_t*);
     int   stat(in char*, stat_t*);
   }
+}
+else version (AIX)
+{
+
 }
 else version (Solaris)
 {

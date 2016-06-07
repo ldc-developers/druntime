@@ -68,6 +68,16 @@ else version( FreeBSD )
         char**  gr_mem;
     }
 }
+else version( AIX )
+{
+    struct group
+    {
+        char*   gr_name;
+        char*   gr_passwd;
+        gid_t   gr_gid;
+        char**  gr_mem;
+    }
+}
 else version( Solaris )
 {
     struct group
@@ -119,6 +129,14 @@ else version( FreeBSD )
     int getgrnam_r(in char*, group*, char*, size_t, group**);
     int getgrgid_r(gid_t, group*, char*, size_t, group**);
 }
+else version( AIX )
+{
+    int _posix_getgrnam_r(in char*, group*, char*, size_t, group**);
+    int _posix_getgrgid_r(gid_t, group*, char*, size_t, group**);
+
+    alias _posix_getgrnam_r getgrnam_r; // Named differently
+    alias _posix_getgrgid_r getgrgid_r;
+}
 else version( Solaris )
 {
     int getgrnam_r(in char*, group*, char*, int, group**);
@@ -154,6 +172,12 @@ else version( OSX )
     @trusted void setgrent();
 }
 else version( FreeBSD )
+{
+    group* getgrent();
+    @trusted void endgrent();
+    @trusted void setgrent();
+}
+else version( AIX )
 {
     group* getgrent();
     @trusted void endgrent();

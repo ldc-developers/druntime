@@ -148,6 +148,35 @@ else version( FreeBSD )
 
     dirent* readdir(DIR*);
 }
+else version (AIX)
+{
+    struct dirent
+    {
+        ulong     d_offset;
+        ino_t     d_ino;
+        ushort    d_reclen;
+        ushort    d_namlen;
+        char[256] d_name;
+    }
+
+    struct DIR
+    {
+        int       dd_fd;
+        blksize_t dd_blksize;
+        char*     dd_buf;
+        c_long    dd_size;
+        c_long    dd_flag;
+        off_t     dd_loc;
+        off_t     dd_curoff;
+        /* Only for the thread safe functions, used for inter-thread locking */
+        void*     dd_lock;
+    }
+
+    dirent *readdir(DIR*);
+
+    DIR* fdopendir(int);
+    int  dirfd(DIR*);
+}
 else version (Solaris)
 {
     struct dirent
@@ -263,6 +292,10 @@ else version( FreeBSD )
 {
     int readdir_r(DIR*, dirent*, dirent**);
 }
+else version (AIX)
+{
+    int readdir_r(DIR*, dirent*, dirent**);
+}
 else version (Solaris)
 {
     static if (__USE_LARGEFILE64)
@@ -316,6 +349,11 @@ else version ( OSX )
         pragma(mangle, "seekdir$INODE64$UNIX2003") void seekdir(DIR*, c_long);
         pragma(mangle, "telldir$INODE64$UNIX2003") c_long telldir(DIR*);
     }
+}
+else version (AIX)
+{
+    void   seekdir(DIR*, c_long);
+    c_long telldir(DIR*);
 }
 else version (Solaris)
 {

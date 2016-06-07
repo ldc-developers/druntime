@@ -134,6 +134,23 @@ else version( FreeBSD )
     alias uint      uid_t;
     alias uint      fflags_t;
 }
+else version (AIX)
+{
+    alias c_long    blkcnt_t;
+    alias c_long    blksize_t;
+    alias c_long    dev_t;
+    alias uint      gid_t;
+    alias ulong     ino_t;
+    alias uint      mode_t;
+    alias short     nlink_t;
+    alias long      off_t;
+    alias c_long    pid_t;
+    //size_t (defined in core.stdc.stddef)
+    alias c_long    ssize_t;
+    alias c_long    time_t;
+    alias uint      uid_t;
+    alias uint      rid_t;
+}
 else version (Solaris)
 {
     alias char* caddr_t;
@@ -263,6 +280,16 @@ else version( FreeBSD )
     alias long      id_t;
     alias c_long    key_t;
     alias c_long    suseconds_t;
+    alias uint      useconds_t;
+}
+else version (AIX)
+{
+    alias c_ulong   fsblkcnt_t;
+    alias c_ulong   fsfilcnt_t;
+    alias int       clock_t;
+    alias c_long    id_t;
+    alias c_long    key_t;
+    alias int       suseconds_t;
     alias uint      useconds_t;
 }
 else version (Solaris)
@@ -641,6 +668,50 @@ else version( FreeBSD )
     alias void* pthread_rwlockattr_t;
     alias void* pthread_t;
 }
+else version (AIX)
+{
+    alias void* pthread_attr_t;
+
+    struct pthread_cond_t
+    {
+        version (D_LP64)
+            long[6] __cv_word;
+        else
+            int[11] __cv_word;
+    }
+
+    alias void* pthread_condattr_t;
+    alias uint pthread_key_t;
+
+    struct pthread_mutex_t
+    {
+        version (D_LP64)
+            long[8] __mt_word;
+        else
+            int[13] __mt_word;
+    }
+
+    alias void* pthread_mutexattr_t;
+
+    struct pthread_once_t
+    {
+        version (D_LP64)
+            long[9] __on_word;
+        else
+            int[28] __on_word;
+    }
+
+    struct pthread_rwlock_t
+    {
+        version (D_LP64)
+            long[10] __rw_word;
+        else
+            int[52] __rw_word;
+    }
+
+    alias void* pthread_rwlockattr_t;
+    alias uint pthread_t;
+}
 else version (Solaris)
 {
     alias uint pthread_t;
@@ -805,6 +876,17 @@ else version( FreeBSD )
     alias void* pthread_barrier_t;
     alias void* pthread_barrierattr_t;
 }
+else version( AIX )
+{
+    struct pthread_barrier_t
+    {
+        version (D_LP64)
+            long[5] __br_word;
+        else
+            int[8] __br_word;
+    }
+    alias void* pthread_barrierattr_t;
+}
 else version( OSX )
 {
 }
@@ -847,6 +929,16 @@ version( CRuntime_Glibc )
 else version( FreeBSD )
 {
     alias void* pthread_spinlock_t;
+}
+else version (AIX)
+{
+    struct pthread_spinlock_t
+    {
+        version (D_LP64)
+            long[3] __sp_word;
+        else
+            int[6] __sp_word;
+    }
 }
 else version (Solaris)
 {

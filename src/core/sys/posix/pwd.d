@@ -85,6 +85,19 @@ else version( FreeBSD )
         int pw_fields;      /* internal: fields filled in */
     }
 }
+else version (AIX)
+{
+    struct passwd
+    {
+        char*   pw_name;
+        char*   pw_passwd;
+        uid_t   pw_uid;
+        gid_t   pw_gid;
+        char*   pw_gecos;
+        char*   pw_dir;
+        char*   pw_shell;
+    }
+}
 else version (Solaris)
 {
     struct passwd
@@ -143,6 +156,14 @@ else version( FreeBSD )
     int getpwnam_r(in char*, passwd*, char*, size_t, passwd**);
     int getpwuid_r(uid_t, passwd*, char*, size_t, passwd**);
 }
+else version (AIX)
+{
+    int _posix_getpwnam_r(in char*, passwd*, char*, size_t, passwd**);
+    int _posix_getpwuid_r(uid_t, passwd*, char*, size_t, passwd**);
+
+    alias _posix_getpwnam_r getpwnam_r;
+    alias _posix_getpwuid_r getpwuid_r;
+}
 else version (Solaris)
 {
     int getpwnam_r(in char*, passwd*, char*, size_t, passwd**);
@@ -178,6 +199,12 @@ else version ( OSX )
     void    setpwent();
 }
 else version ( FreeBSD )
+{
+    void    endpwent();
+    passwd* getpwent();
+    void    setpwent();
+}
+else version (AIX)
 {
     void    endpwent();
     passwd* getpwent();

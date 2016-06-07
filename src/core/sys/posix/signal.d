@@ -105,7 +105,32 @@ union sigval
     void*   sival_ptr;
 }
 
-version( Solaris )
+version( AIX )
+{
+    union sigval
+    {
+        int     sival_ptr; // Always 32bit!
+        int     sival_int;
+    }
+}
+else
+{
+    union sigval
+    {
+        int     sival_int;
+        void*   sival_ptr;
+    }
+}
+
+version( AIX )
+{
+    // TODO Check if a sysconf call is possible.
+    // There is at least sysconf(_SC_RTSIG_MAX) available.
+    // See: http://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.basetrf2/sysconf.htm?lang=en
+    enum SIGRTMIN = 50;
+    enum SIGRTMAX = 57;
+}
+else version( Solaris )
 {
     import core.sys.posix.unistd;
 
@@ -425,6 +450,30 @@ else version( FreeBSD )
     enum SIGUSR2    = 31;
     enum SIGURG     = 16;
 }
+else version (AIX)
+{
+    //SIGABRT (defined in core.stdc.signal)
+    enum SIGALRM    = 14;
+    enum SIGBUS     = 10;
+    enum SIGCHLD    = 20;
+    enum SIGCONT    = 19;
+    //SIGFPE (defined in core.stdc.signal)
+    enum SIGHUP     = 1;
+    //SIGILL (defined in core.stdc.signal)
+    //SIGINT (defined in core.stdc.signal)
+    enum SIGKILL    = 9;
+    enum SIGPIPE    = 13;
+    enum SIGQUIT    = 3;
+    //SIGSEGV (defined in core.stdc.signal)
+    enum SIGSTOP    = 17;
+    //SIGTERM (defined in core.stdc.signal)
+    enum SIGTSTP    = 18;
+    enum SIGTTIN    = 21;
+    enum SIGTTOU    = 22;
+    enum SIGUSR1    = 30;
+    enum SIGUSR2    = 31;
+    enum SIGURG     = 16;
+}
 else version (Solaris)
 {
     enum SIGALRM = 14;
@@ -481,6 +530,19 @@ else version( FreeBSD )
         }
         int      sa_flags;
         sigset_t sa_mask;
+    }
+}
+else version (AIX)
+{
+    struct sigaction_t
+    {
+        union
+        {
+            sigfn_t     sa_handler;
+            sigactfn_t  sa_sigaction;
+        }
+        sigset_t sa_mask;
+        int      sa_flags;
     }
 }
 else version (Solaris)
@@ -884,6 +946,54 @@ else version( FreeBSD )
     int sigprocmask(int, in sigset_t*, sigset_t*);
     int sigsuspend(in sigset_t *);
     int sigwait(in sigset_t*, int*);
+}
+else version (AIX)
+{
+    struct sigset_t
+    {
+        c_ulong[4] ss_set;
+        uint losigs;
+        uint hisigs;
+    }
+
+    // TODO: This is buggy.
+    struct siginfo_t
+    {
+        int si_signo;
+        int si_errno;
+        int si_code;
+        int si_pid;
+        uid_t si_uid;
+        version (D_LP64)
+        {
+            int si_status;
+            void *si_addr;
+        }
+        else
+        {
+            void *si_addr;
+            int si_status;
+        }
+
+        c_long si_band;
+        sigval si_value;
+        int __si_flags;
+        version (D_LP64)
+            int __pad[3];
+        else
+            int __pad[6];
+    }
+
+    int kill(pid_t, int);
+    int sigaction(int, in sigaction_t*, sigaction_t*);
+    int sigaddset(sigset_t*, int);
+    int sigdelset(sigset_t*, int);
+    int sigemptyset(sigset_t*);
+    int sigfillset(sigset_t*);
+    int sigismember(in sigset_t*, int);
+    int sigpending(sigset_t*);
+    int sigprocmask(int, in sigset_t*, sigset_t*);
+    int sigsuspend(in sigset_t*);
 }
 else version (Solaris)
 {
@@ -1656,6 +1766,119 @@ else version( FreeBSD )
     int sigpause(int);
     int sigrelse(int);
 }
+else version (AIX)
+{
+    enum SIGPOLL = 23;
+    enum SIGPROF = 32;
+    enum SIGSYS = 12;
+    enum SIGTRAP = 5;
+    enum SIGVTALRM = 34;
+    enum SIGXCPU = 24;
+    enum SIGXFSZ = 25;
+
+    enum
+    {
+        SA_ONSTACK   = 0x00000001,
+        SA_RESTART   = 0x00000008,
+        SA_RESETHAND = 0x00000002,
+        SA_SIGINFO   = 0x00000100,
+        SA_NODEFER   = 0x00000200,
+        SA_NOCLDWAIT = 0x00000400,
+    }
+
+    enum
+    {
+        SS_ONSTACK = 0x00000001,
+        SS_DISABLE = 0x00000002,
+    }
+
+    struct stack_t
+    {
+        uint ss_sp;   // Always 32bit
+        uint ss_size; // Always 32bit
+        int ss_flags;
+        int[4] __pad;
+    }
+
+    enum
+    {
+        ILL_ILLOPC = 30,
+        ILL_ILLOPN = 31,
+        ILL_ILLADR = 32,
+        ILL_ILLTRP = 33,
+        ILL_PRVOPC = 34,
+        ILL_PRVREG = 35,
+        ILL_COPROC = 36,
+        ILL_BADSTK = 37,
+    }
+
+    enum
+    {
+        BUS_ADRALN = 1,
+        BUS_ADRERR = 2,
+        BUS_OBJERR = 3,
+        BUS_UEGARD = 4,
+    }
+
+    enum
+    {
+        SEGV_MAPERR = 50,
+        SEGV_ACCERR = 51,
+        SEGV_KEYERR = 52,
+    }
+
+    enum
+    {
+        FPE_INTDIV = 20,
+        FPE_INTOVF = 21,
+        FPE_FLTDIV = 22,
+        FPE_FLTOVF = 23,
+        FPE_FLTUND = 24,
+        FPE_FLTRES = 25,
+        FPE_FLTINV = 26,
+        FPE_FLTSUB = 27,
+    }
+
+    enum
+    {
+        TRAP_BRKPT = 60,
+        TRAP_TRACE = 61,
+    }
+
+    enum
+    {
+        CLD_EXITED    = 10,
+        CLD_KILLED    = 11,
+        CLD_DUMPED    = 12,
+        CLD_TRAPPED   = 13,
+        CLD_STOPPED   = 14,
+        CLD_CONTINUED = 15,
+    }
+
+    enum
+    {
+        POLL_IN  = 40,
+        POLL_OUT = 41,
+        POLL_MSG = -3,
+        POLL_ERR = 43,
+        POLL_PRI = 44,
+        POLL_HUP = 45,
+    }
+
+  nothrow:
+  @nogc:
+    sigfn_t2 bsd_signal(int sig, sigfn_t2 func);
+    sigfn_t2 sigset(int sig, sigfn_t2 func);
+
+    int killpg(pid_t, int);
+    int sigaltstack(in stack_t*, stack_t*);
+    int sighold(int);
+    int sigignore(int);
+    int siginterrupt(int, int);
+    int sigpause(int);
+    int sigrelse(int);
+    //int sigstack(sigstack *, sigstack *);
+}
 else version (Solaris)
 {
     enum SIGPOLL = 22;
@@ -1959,6 +2182,14 @@ else version( FreeBSD )
         c_long  tv_nsec;
     }
 }
+else version (AIX)
+{
+    struct timespec
+    {
+        time_t  tv_sec;
+        c_long  tv_nsec;
+    }
+}
 else version (Solaris)
 {
     struct timespec
@@ -2057,6 +2288,21 @@ else version( FreeBSD )
 else version (OSX)
 {
 }
+else version (AIX)
+{
+    struct sigevent
+    {
+        sigval sigev_value;
+        int sigev_signo;
+        int sigev_notify;
+        int sigev_notify_function;   // Always 23bit.
+        int sigev_notify_attributes; // Always 23bit.
+    }
+
+    int sigqueue(pid_t, int, sigval);
+    int sigtimedwait(in sigset_t*, siginfo_t*, in timespec *);
+    int sigwaitinfo(in sigset_t*, siginfo_t*);
+}
 else version (Solaris)
 {
     struct sigevent
@@ -2123,6 +2369,11 @@ else version( OSX )
     int pthread_sigmask(int, in sigset_t*, sigset_t*);
 }
 else version( FreeBSD )
+{
+    int pthread_kill(pthread_t, int);
+    int pthread_sigmask(int, in sigset_t*, sigset_t*);
+}
+else version (AIX)
 {
     int pthread_kill(pthread_t, int);
     int pthread_sigmask(int, in sigset_t*, sigset_t*);
