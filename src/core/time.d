@@ -2686,7 +2686,13 @@ unittest
 
     static bool clockSupported(ClockType c)
     {
-        version (Linux_Pre_2639) // skip CLOCK_BOOTTIME on older linux kernels
+        version (Solaris)
+        {
+            // CLOCK_REALTIME and CLOCK_HIGHRES (CLOCK_MONOTONIC) are the only two
+            // clock currently implemented on solaris and illumos.
+            return c != ClockType.second && c != ClockType.processCPUTime && c != ClockType.threadCPUTime;
+        }
+        else version (Linux_Pre_2639) // skip CLOCK_BOOTTIME on older linux kernels
             return c != ClockType.second && c != ClockType.bootTime;
         else
             return c != ClockType.second; // second doesn't work with MonoTimeImpl
