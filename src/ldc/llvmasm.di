@@ -12,6 +12,6 @@ pragma(LDC_inline_asm)
 
     template __asmtuple(T...)
     {
-        __asmtuple_t!(T) __asmtuple(const(char)[] asmcode, const(char)[] constraints, ...);
+        __asmtuple_t!(T) __asmtuple(const(char)[] asmcode, const(char)[] constraints, ...) pure nothrow @nogc;
     }
 }
