@@ -148,6 +148,35 @@ else version( FreeBSD )
 
     dirent* readdir(DIR*);
 }
+else version(NetBSD)
+{
+    enum
+    {
+        DT_UNKNOWN  = 0,
+        DT_FIFO     = 1,
+        DT_CHR      = 2,
+        DT_DIR      = 4,
+        DT_BLK      = 6,
+        DT_REG      = 8,
+        DT_LNK      = 10,
+        DT_SOCK     = 12,
+        DT_WHT      = 14
+    }
+
+    struct dirent
+    {
+        ulong      d_fileno;
+        ushort    d_reclen;
+        ushort    d_namlen;
+        ubyte     d_type;
+        char[512] d_name;
+    }
+
+    alias void* DIR;
+
+    dirent* __readdir30(DIR*);
+    alias __readdir30 readdir;
+}
 else version (Solaris)
 {
     struct dirent
@@ -236,6 +265,13 @@ version( OSX )
         pragma(mangle, "rewinddir$INODE64$UNIX2003") void rewinddir(DIR*);
     }
 }
+else version(NetBSD)
+{
+    int     closedir(DIR*);
+    DIR*    __opendir30(in char*);
+    alias __opendir30 opendir;
+    void    rewinddir(DIR*);
+}
 else
 {
     int     closedir(DIR*);
@@ -270,6 +306,11 @@ else version( OSX )
 else version( FreeBSD )
 {
     int readdir_r(DIR*, dirent*, dirent**);
+}
+else version(NetBSD)
+{
+    int __readdir_r30(DIR*, dirent*, dirent**);
+    alias __readdir_r30 readdir_r;
 }
 else version (Solaris)
 {
@@ -306,6 +347,11 @@ version( CRuntime_Glibc )
     c_long telldir(DIR*);
 }
 else version( FreeBSD )
+{
+    void   seekdir(DIR*, c_long);
+    c_long telldir(DIR*);
+}
+else version(NetBSD)
 {
     void   seekdir(DIR*, c_long);
     c_long telldir(DIR*);
