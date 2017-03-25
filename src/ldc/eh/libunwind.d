@@ -491,7 +491,8 @@ void _d_throw_exception(Object e)
 
     auto throwable = cast(Throwable) e;
 
-    if (throwable.info is null && cast(byte*)throwable !is typeid(throwable).init.ptr)
+    static import ldc.eh.config;
+    if (ldc.eh.config.traceContext && throwable.info is null && cast(byte*)throwable !is typeid(throwable).init.ptr)
         throwable.info = _d_traceContext();
 
     auto exc_struct = ExceptionStructPool.malloc();
