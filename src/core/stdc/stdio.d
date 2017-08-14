@@ -25,6 +25,12 @@ private
   {
     import core.sys.posix.sys.types;
   }
+  else
+  version (DragonFlyBSD)
+  {
+    import core.sys.posix.sys.types;
+  }
+
 }
 
 extern (C):
@@ -137,6 +143,36 @@ else version( OSX )
     }
 }
 else version ( FreeBSD )
+{
+    enum
+    {
+        ///
+        BUFSIZ       = 1024,
+        ///
+        EOF          = -1,
+        ///
+        FOPEN_MAX    = 20,
+        ///
+        FILENAME_MAX = 1024,
+        ///
+        TMP_MAX      = 308915776,
+        ///
+        L_tmpnam     = 1024
+    }
+
+    struct __sbuf
+    {
+        ubyte *_base;
+        int _size;
+    }
+
+    union __mbstate_t // <sys/_types.h>
+    {
+        char[128]   _mbstate8;
+        long        _mbstateL;
+    }
+}
+else version ( DragonFlyBSD )
 {
     enum
     {
@@ -347,6 +383,52 @@ else version( OSX )
     alias shared(__sFILE) FILE;
 }
 else version( FreeBSD )
+{
+    ///
+    alias off_t fpos_t;
+
+    ///
+    struct __sFILE
+    {
+        ubyte*          _p;
+        int             _r;
+        int             _w;
+        short           _flags;
+        short           _file;
+        __sbuf          _bf;
+        int             _lbfsize;
+
+        void*           _cookie;
+        int     function(void*)                 _close;
+        int     function(void*, char*, int)     _read;
+        fpos_t  function(void*, fpos_t, int)    _seek;
+        int     function(void*, in char*, int)  _write;
+
+        __sbuf          _ub;
+        ubyte*          _up;
+        int             _ur;
+
+        ubyte[3]        _ubuf;
+        ubyte[1]        _nbuf;
+
+        __sbuf          _lb;
+
+        int             _blksize;
+        fpos_t          _offset;
+
+        pthread_mutex_t _fl_mutex;
+        pthread_t       _fl_owner;
+        int             _fl_count;
+        int             _orientation;
+        __mbstate_t     _mbstate;
+    }
+
+    ///
+    alias __sFILE _iobuf;
+    ///
+    alias shared(__sFILE) FILE;
+}
+else version( DragonFlyBSD )
 {
     ///
     alias off_t fpos_t;
@@ -638,6 +720,29 @@ else version( OSX )
     alias __stderrp stderr;
 }
 else version( FreeBSD )
+{
+    enum
+    {
+        ///
+        _IOFBF = 0,
+        ///
+        _IOLBF = 1,
+        ///
+        _IONBF = 2,
+    }
+
+    private extern shared FILE* __stdinp;
+    private extern shared FILE* __stdoutp;
+    private extern shared FILE* __stderrp;
+
+    ///
+    alias __stdinp  stdin;
+    ///
+    alias __stdoutp stdout;
+    ///
+    alias __stderrp stderr;
+}
+else version( DragonFlyBSD )
 {
     enum
     {
@@ -1041,6 +1146,28 @@ else version( OSX )
     int  vsnprintf(char* s, size_t n, in char* format, va_list arg);
 }
 else version( FreeBSD )
+{
+  // No unsafe pointer manipulation.
+  @trusted
+  {
+      ///
+    void rewind(FILE*);
+    ///
+    pure void clearerr(FILE*);
+    ///
+    pure int  feof(FILE*);
+    ///
+    pure int  ferror(FILE*);
+    ///
+    int  fileno(FILE*);
+  }
+
+  ///
+    int  snprintf(char* s, size_t n, in char* format, ...);
+    ///
+    int  vsnprintf(char* s, size_t n, in char* format, va_list arg);
+}
+else version( DragonFlyBSD )
 {
   // No unsafe pointer manipulation.
   @trusted

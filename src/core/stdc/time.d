@@ -145,6 +145,12 @@ else version( FreeBSD )
     ///
     extern __gshared const(char)*[2] tzname; // non-standard
 }
+else version ( DragonFlyBSD) {
+    ///
+    void tzset();                            // non-standard
+    ///
+    extern __gshared const(char)*[2] tzname; // non-standard
+}
 else version (Solaris)
 {
     ///

@@ -113,6 +113,28 @@ else version( FreeBSD )
     extern (D) int  WSTOPSIG( int status )     { return status >> 8;                     }
     extern (D) int  WTERMSIG( int status )     { return _WSTATUS( status );              }
 }
+else version( DragonFlyBSD )
+{
+    enum WNOHANG        = 1;
+    enum WUNTRACED      = 2;
+
+    private
+    {
+        enum _WSTOPPED = 0x7F; // octal 0177
+    }
+
+    extern (D) int _WSTATUS(int status)         { return (status & 0x7F);           }
+    extern (D) int  WEXITSTATUS( int status )   { return (status >> 8);             }
+    extern (D) int  WIFCONTINUED( int status )  { return status == 0x13;            }
+    extern (D) bool WIFEXITED( int status )     { return _WSTATUS(status) == 0;     }
+    extern (D) bool WIFSIGNALED( int status )
+    {
+        return _WSTATUS( status ) != _WSTOPPED && _WSTATUS( status ) != 0;
+    }
+    extern (D) bool WIFSTOPPED( int status )   { return _WSTATUS( status ) == _WSTOPPED; }
+    extern (D) int  WSTOPSIG( int status )     { return status >> 8;                     }
+    extern (D) int  WTERMSIG( int status )     { return _WSTATUS( status );              }
+}
 else version (Solaris)
 {
     enum WNOHANG        = 64;
@@ -198,6 +220,14 @@ else version( OSX )
     int waitid(idtype_t, id_t, siginfo_t*, int);
 }
 else version (FreeBSD)
+{
+    enum WSTOPPED       = WUNTRACED;
+    enum WCONTINUED     = 4;
+    enum WNOWAIT        = 8;
+
+    // http://www.freebsd.org/projects/c99/
+}
+else version (DragonFlyBSD)
 {
     enum WSTOPPED       = WUNTRACED;
     enum WCONTINUED     = 4;

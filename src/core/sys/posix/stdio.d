@@ -272,6 +272,10 @@ version( FreeBSD )
 {
     enum P_tmpdir  = "/var/tmp/";
 }
+version( DragonFlyBSD )
+{
+    enum P_tmpdir  = "/var/tmp/";
+}
 version( Solaris )
 {
     enum P_tmpdir  = "/var/tmp/";

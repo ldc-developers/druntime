@@ -12,6 +12,7 @@ module rt.sections_elf_shared;
 
 version (CRuntime_Glibc) enum SharedELF = true;
 else version (FreeBSD) enum SharedELF = true;
+else version (DragonFlyBSD) enum SharedELF = true;
 else enum SharedELF = false;
 static if (SharedELF):
 
@@ -31,6 +32,12 @@ else version (FreeBSD)
     import core.sys.freebsd.dlfcn;
     import core.sys.freebsd.sys.elf;
     import core.sys.freebsd.sys.link_elf;
+}
+else version (DragonFlyBSD)
+{
+    import core.sys.dragonflybsd.dlfcn;
+    import core.sys.dragonflybsd.sys.elf;
+    import core.sys.dragonflybsd.sys.link_elf;
 }
 else
 {
@@ -754,6 +761,10 @@ else version (FreeBSD) bool findDSOInfoForAddr(in void* addr, dl_phdr_info* resu
 {
     return !!_rtld_addr_phdr(addr, result);
 }
+else version (DragonFlyBSD) bool findDSOInfoForAddr(in void* addr, dl_phdr_info* result=null) nothrow @nogc
+{
+    return !!_rtld_addr_phdr(addr, result);
+}
 
 /*********************************
  * Determine if 'addr' lies within shared object 'info'.
@@ -779,11 +790,13 @@ bool findSegmentForAddr(in ref dl_phdr_info info, in void* addr, ElfW!"Phdr"* re
 version (linux) import core.sys.linux.errno : program_invocation_name;
 // should be in core.sys.freebsd.stdlib
 version (FreeBSD) extern(C) const(char)* getprogname() nothrow @nogc;
+version (DragonFlyBSD) extern(C) const(char)* getprogname() nothrow @nogc;
 
 @property const(char)* progname() nothrow @nogc
 {
     version (linux) return program_invocation_name;
     version (FreeBSD) return getprogname();
+    version (DragonFlyBSD) return getprogname();
 }
 
 nothrow
