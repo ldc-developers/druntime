@@ -359,6 +359,24 @@ else version (FreeBSD)
 
     int ioctl(int, c_ulong, ...);
 }
+else version (DragonFlyBSD)
+{
+    struct fiodgname_arg
+    {
+        int len;
+        void* buf;
+    }
+
+    struct winsize
+    {
+        ushort ws_row;
+        ushort ws_col;
+        ushort ws_xpixel;
+        ushort ws_ypixel;
+    }
+
+    int ioctl(int, c_ulong, ...);
+}
 else version (Solaris)
 {
     int ioctl(int fildes, int request, ...);

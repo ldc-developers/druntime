@@ -414,6 +414,7 @@ else version( Posix )
                 assert( status == 0 );
 
                 version (FreeBSD) Thread.sm_suspendagain = false;
+		else version (DragonFlyBSD) Thread.sm_suspendagain = false;
                 status = sem_post( &suspendCount );
                 assert( status == 0 );
 
@@ -427,6 +428,14 @@ else version( Posix )
 
             // avoid deadlocks on FreeBSD, see Issue 13416
             version (FreeBSD)
+            {
+                if (THR_IN_CRITICAL(pthread_self()))
+                {
+                    Thread.sm_suspendagain = true;
+                    if (sem_post(&suspendCount)) assert(0);
+                    return;
+                }
+            } else version (DragonFlyBSD)
             {
                 if (THR_IN_CRITICAL(pthread_self()))
                 {
@@ -453,6 +462,25 @@ else version( Posix )
         // HACK libthr internal (thr_private.h) macro, used to
         // avoid deadlocks in signal handler, see Issue 13416
         version (FreeBSD) bool THR_IN_CRITICAL(pthread_t p) nothrow @nogc
+        {
+            import core.sys.posix.config : c_long;
+            import core.sys.posix.sys.types : lwpid_t;
+
+            // If the begin of pthread would be changed in libthr (unlikely)
+            // we'll run into undefined behavior, compare with thr_private.h.
+            static struct pthread
+            {
+                c_long tid;
+                static struct umutex { lwpid_t owner; uint flags; uint[2] ceilings; uint[4] spare; }
+                umutex lock;
+                uint cycle;
+                int locklevel;
+                int critical_count;
+                // ...
+            }
+            auto priv = cast(pthread*)p;
+            return priv.locklevel > 0 || priv.critical_count > 0;
+        } else version (DragonFlyBSD) bool THR_IN_CRITICAL(pthread_t p) nothrow @nogc
         {
             import core.sys.posix.config : c_long;
             import core.sys.posix.sys.types : lwpid_t;
@@ -1401,6 +1429,10 @@ private:
     __gshared Thread    sm_main;
 
     version (FreeBSD)
+    {
+        // set when suspend failed and should be retried, see Issue 13416
+        static shared bool sm_suspendagain;
+    } else version (DragonFlyBSD)
     {
         // set when suspend failed and should be retried, see Issue 13416
         static shared bool sm_suspendagain;
@@ -2678,6 +2710,10 @@ private void suspend( Thread t ) nothrow
             {
                 // avoid deadlocks, see Issue 13416
                 if (Thread.sm_suspendagain) goto Lagain;
+            } else version (DragonFlyBSD)
+            {
+                // avoid deadlocks, see Issue 13416
+                if (Thread.sm_suspendagain) goto Lagain;
             }
         }
         else if( !t.m_lock )
@@ -3195,6 +3231,7 @@ extern (C)
 nothrow:
     version (CRuntime_Glibc) int pthread_getattr_np(pthread_t thread, pthread_attr_t* attr);
     version (FreeBSD) int pthread_attr_get_np(pthread_t thread, pthread_attr_t* attr);
+    version (DragonFlyBSD) int pthread_attr_get_np(pthread_t thread, pthread_attr_t* attr);
     version (Solaris) int thr_stksegment(stack_t* stk);
     version (CRuntime_Bionic) int pthread_getattr_np(pthread_t thid, pthread_attr_t* attr);
 }
@@ -3312,6 +3349,17 @@ private void* getStackBottom() nothrow
         return addr + size;
     }
     else version (FreeBSD)
+    {
+        pthread_attr_t attr;
+        void* addr; size_t size;
+
+        pthread_attr_init(&attr);
+        pthread_attr_get_np(pthread_self(), &attr);
+        pthread_attr_getstack(&attr, &addr, &size);
+        pthread_attr_destroy(&attr);
+        return addr + size;
+    }
+    else version (DragonFlyBSD)
     {
         pthread_attr_t attr;
         void* addr; size_t size;
@@ -4668,6 +4716,7 @@ private:
         {
             version (Posix) import core.sys.posix.sys.mman; // mmap
             version (FreeBSD) import core.sys.freebsd.sys.mman : MAP_ANON;
+            version (DragonFlyBSD) import core.sys.dragonflybsd.sys.mman : MAP_ANON;
             version (CRuntime_Glibc) import core.sys.linux.sys.mman : MAP_ANON;
             version (OSX) import core.sys.osx.sys.mman : MAP_ANON;
 
