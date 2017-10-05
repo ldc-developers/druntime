@@ -59,7 +59,7 @@ version( CRuntime_DigitalMars )
     ///
     enum int     L_tmpnam   = _P_tmpdir.length + 12;
 }
-else version( CRuntime_Microsoft )
+else version( Windows )
 {
     enum
     {
@@ -263,6 +263,23 @@ else version( CRuntime_Microsoft )
     }
 
     ///
+    alias shared(_iobuf) FILE;
+}
+else version( MinGW )
+{
+    alias long fpos_t;
+
+    struct _iobuf {
+        char *_ptr;
+        int _cnt;
+        char *_base;
+        int _flag;
+        int _file;
+        int _charbuf;
+        int _bufsiz;
+        char *_tmpfname;
+    };
+
     alias shared(_iobuf) FILE;
 }
 else version( CRuntime_Glibc )
@@ -556,6 +573,49 @@ version( CRuntime_DigitalMars )
     ///
     shared stdprn = &_iob[4];
 }
+else version( MinGW )
+{
+    enum
+    {
+        ///
+        _IOFBF   = 0,
+        ///
+        _IOLBF   = 0x40,
+        ///
+        _IONBF   = 4,
+        ///
+        _IOREAD  = 1,     // non-standard
+        ///
+        _IOWRT   = 2,     // non-standard
+        ///
+        _IOMYBUF = 8,     // non-standard
+        ///
+        _IOEOF   = 0x10,  // non-standard
+        ///
+        _IOERR   = 0x20,  // non-standard
+        ///
+        _IOSTRG  = 0x40,  // non-standard
+        ///
+        _IORW    = 0x80,  // non-standard
+        ///
+        _IOAPP   = 0x200, // non-standard
+        ///
+        _IOAPPEND = 0x200, // non-standard
+    }
+
+    extern shared void function() _fcloseallp;
+
+    private extern shared FILE[_NFILE] _iob;
+
+    shared(FILE)* __iob_func();
+
+    ///
+    shared FILE* stdin = &_iob[0];
+    ///
+    shared FILE* stdout = &_iob[1];
+    ///
+    shared FILE* stderr = &_iob[2];
+}
 else version( CRuntime_Microsoft )
 {
     enum
@@ -748,98 +808,30 @@ FILE* freopen(in char* filename, in char* mode, FILE* stream);
 void setbuf(FILE* stream, char* buf);
 ///
 int  setvbuf(FILE* stream, char* buf, int mode, size_t size);
-
-version (MinGW)
-{
-    // Prefer the MinGW versions over the MSVC ones, as the latter don't handle
-    // reals at all.
-    ///
-    int __mingw_fprintf(FILE* stream, in char* format, ...);
-    ///
-    alias __mingw_fprintf fprintf;
-
-    ///
-    int __mingw_fscanf(FILE* stream, in char* format, ...);
-    ///
-    alias __mingw_fscanf fscanf;
-
-    ///
-    int __mingw_sprintf(char* s, in char* format, ...);
-    ///
-    alias __mingw_sprintf sprintf;
-
-    ///
-    int __mingw_sscanf(in char* s, in char* format, ...);
-    ///
-    alias __mingw_sscanf sscanf;
-
-    ///
-    int __mingw_vfprintf(FILE* stream, in char* format, va_list arg);
-    ///
-    alias __mingw_vfprintf vfprintf;
-
-    ///
-    int __mingw_vfscanf(FILE* stream, in char* format, va_list arg);
-    ///
-    alias __mingw_vfscanf vfscanf;
-
-    ///
-    int __mingw_vsprintf(char* s, in char* format, va_list arg);
-    ///
-    alias __mingw_vsprintf vsprintf;
-
-    ///
-    int __mingw_vsscanf(in char* s, in char* format, va_list arg);
-    ///
-    alias __mingw_vsscanf vsscanf;
-
-    ///
-    int __mingw_vprintf(in char* format, va_list arg);
-    ///
-    alias __mingw_vprintf vprintf;
-
-    ///
-    int __mingw_vscanf(in char* format, va_list arg);
-    ///
-    alias __mingw_vscanf vscanf;
-
-    ///
-    int __mingw_printf(in char* format, ...);
-    ///
-    alias __mingw_printf printf;
-
-    ///
-    int __mingw_scanf(in char* format, ...);
-    ///
-    alias __mingw_scanf scanf;
-}
-else
-{
-    ///
-    int fprintf(FILE* stream, in char* format, ...);
-    ///
-    int fscanf(FILE* stream, in char* format, ...);
-    ///
-    int sprintf(char* s, in char* format, ...);
-    ///
-    int sscanf(in char* s, in char* format, ...);
-    ///
-    int vfprintf(FILE* stream, in char* format, va_list arg);
-    ///
-    int vfscanf(FILE* stream, in char* format, va_list arg);
-    ///
-    int vsprintf(char* s, in char* format, va_list arg);
-    ///
-    int vsscanf(in char* s, in char* format, va_list arg);
-    ///
-    int vprintf(in char* format, va_list arg);
-    ///
-    int vscanf(in char* format, va_list arg);
-    ///
-    int printf(in char* format, ...);
-    ///
-    int scanf(in char* format, ...);
-}
+///
+int fprintf(FILE* stream, in char* format, ...);
+///
+int fscanf(FILE* stream, in char* format, ...);
+///
+int sprintf(char* s, in char* format, ...);
+///
+int sscanf(in char* s, in char* format, ...);
+///
+int vfprintf(FILE* stream, in char* format, va_list arg);
+///
+int vfscanf(FILE* stream, in char* format, va_list arg);
+///
+int vsprintf(char* s, in char* format, va_list arg);
+///
+int vsscanf(in char* s, in char* format, va_list arg);
+///
+int vprintf(in char* format, va_list arg);
+///
+int vscanf(in char* format, va_list arg);
+///
+int printf(in char* format, ...);
+///
+int scanf(in char* format, ...);
 
 // No unsafe pointer manipulation.
 @trusted
@@ -896,35 +888,37 @@ size_t fwrite(in void* ptr, size_t size, size_t nmemb, FILE* stream);
 
 version( MinGW )
 {
-  // No unsafe pointer manipulation.
-  extern (D) @trusted
-  {
-      ///
-    void rewind(FILE* stream)   { fseek(stream,0L,SEEK_SET); stream._flag = stream._flag & ~_IOERR; }
-    ///
-    pure void clearerr(FILE* stream) { stream._flag = stream._flag & ~(_IOERR|_IOEOF);                 }
-    ///
-    pure int  feof(FILE* stream)     { return stream._flag&_IOEOF;                       }
-    ///
-    pure int  ferror(FILE* stream)   { return stream._flag&_IOERR;                       }
-  }
-  ///
-    int   __mingw_snprintf(char* s, size_t n, in char* fmt, ...);
-    ///
-    alias __mingw_snprintf _snprintf;
-    ///
-    alias __mingw_snprintf snprintf;
+    // No unsafe pointer manipulation.
+    @trusted
+    {
+        ///
+        void rewind(FILE* stream);
+        ///
+        pure void clearerr(FILE* stream);
+        ///
+        pure int  feof(FILE* stream);
+        ///
+        pure int  ferror(FILE* stream);
+        ///
+        pure int  fileno(FILE* stream);
+    }
 
     ///
-    int   __mingw_vsnprintf(char* s, size_t n, in char* format, va_list arg);
+    int _snprintf(char* s, size_t n, in char* format, ...);
     ///
-    alias __mingw_vsnprintf _vsnprintf;
+    int  snprintf(char* s, size_t n, in char* format, ...);
+
     ///
-    alias __mingw_vsnprintf vsnprintf;
+    int _vsnprintf(char* s, size_t n, in char* format, va_list arg);
+    ///
+    int  vsnprintf(char* s, size_t n, in char* format, va_list arg);
 
-    uint _set_output_format(uint format);
-    enum _TWO_DIGIT_EXPONENT = 1;
+    ///
+    int _lock_file(FILE *fp);
+    ///
+    int _unlock_file(FILE *fp);
 
+    ///
     intptr_t _get_osfhandle(int fd);
     int _open_osfhandle(intptr_t osfhandle, int flags);
 }
@@ -1232,7 +1226,7 @@ version(CRuntime_DigitalMars)
     FILE *_wfdopen(int fd, const(wchar)* flags); ///
 
 }
-else version (CRuntime_Microsoft)
+else version (Windows)
 {
     int _open(const char* filename, int oflag, ...); ///
     int _wopen(const wchar* filename, int oflag, ...); ///
@@ -1241,6 +1235,7 @@ else version (CRuntime_Microsoft)
     int _close(int fd); ///
     FILE *_fdopen(int fd, const(char)* flags); ///
     FILE *_wfdopen(int fd, const(wchar)* flags); ///
+    alias _fdopen fdopen;
 }
 
 version (Windows)
