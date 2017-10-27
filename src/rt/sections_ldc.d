@@ -126,13 +126,9 @@ private
             alias _data_start__ = __data_start__;
             alias _bss_end__ = __bss_end__;
         }
-    }
-    else version (Windows)
-    {
-        extern extern (C) __gshared
+        else
         {
-            int _data_start__;
-            int _bss_end__;
+            static assert(false, "Unsupported platform");
         }
     }
     else version (UseELF)
@@ -400,7 +396,7 @@ void initSections()
             pushRange(_bss_start__, _bss_end__);
         }
     }
-    else version (Windows)
+    else version (MinGW)
     {
         pushRange(&_data_start__, &_bss_end__);
     }

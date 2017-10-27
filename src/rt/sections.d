@@ -22,9 +22,11 @@ else version (OSX)
     public import rt.sections_osx;
 else version (CRuntime_DigitalMars)
     public import rt.sections_win32;
-else version (Windows)
+else version (CRuntime_Microsoft)
     public import rt.sections_win64;
-else version (CRuntime_Bionic)
+else version (MinGW) {
+    // handled by rt.sections_ldc
+} else version (CRuntime_Bionic)
     public import rt.sections_android;
 else
     static assert(0, "unimplemented");

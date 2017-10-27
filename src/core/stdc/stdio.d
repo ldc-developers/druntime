@@ -573,50 +573,7 @@ version( CRuntime_DigitalMars )
     ///
     shared stdprn = &_iob[4];
 }
-else version( MinGW )
-{
-    enum
-    {
-        ///
-        _IOFBF   = 0,
-        ///
-        _IOLBF   = 0x40,
-        ///
-        _IONBF   = 4,
-        ///
-        _IOREAD  = 1,     // non-standard
-        ///
-        _IOWRT   = 2,     // non-standard
-        ///
-        _IOMYBUF = 8,     // non-standard
-        ///
-        _IOEOF   = 0x10,  // non-standard
-        ///
-        _IOERR   = 0x20,  // non-standard
-        ///
-        _IOSTRG  = 0x40,  // non-standard
-        ///
-        _IORW    = 0x80,  // non-standard
-        ///
-        _IOAPP   = 0x200, // non-standard
-        ///
-        _IOAPPEND = 0x200, // non-standard
-    }
-
-    extern shared void function() _fcloseallp;
-
-    private extern shared FILE[_NFILE] _iob;
-
-    shared(FILE)* __iob_func();
-
-    ///
-    shared FILE* stdin = &_iob[0];
-    ///
-    shared FILE* stdout = &_iob[1];
-    ///
-    shared FILE* stderr = &_iob[2];
-}
-else version( CRuntime_Microsoft )
+else version( Windows )
 {
     enum
     {
@@ -646,14 +603,32 @@ else version( CRuntime_Microsoft )
         _IOAPPEND = 0x200, // non-standard
     }
 
-    extern shared void function() _fcloseallp;
+    version (CRuntime_Microsoft)
+    {
+        extern shared void function() _fcloseallp;
 
-    ///
-    shared FILE* stdin;  // = &__iob_func()[0];
-    ///
-    shared FILE* stdout; // = &__iob_func()[1];
-    ///
-    shared FILE* stderr; // = &__iob_func()[2];
+        ///
+        shared FILE* stdin;  // = &__iob_func()[0];
+        ///
+        shared FILE* stdout; // = &__iob_func()[1];
+        ///
+        shared FILE* stderr; // = &__iob_func()[2];
+    }
+    else version (MinGW)
+    {
+        private extern shared FILE[_NFILE] _iob;
+
+        ///
+        shared FILE* stdin = &_iob[0];
+        ///
+        shared FILE* stdout = &_iob[1];
+        ///
+        shared FILE* stderr = &_iob[2];
+    }
+    else
+    {
+        static assert(false, "Unsupported platform");
+    }
 }
 else version( CRuntime_Glibc )
 {
@@ -886,43 +861,7 @@ size_t fwrite(in void* ptr, size_t size, size_t nmemb, FILE* stream);
     c_long ftell(FILE* stream);
 }
 
-version( MinGW )
-{
-    // No unsafe pointer manipulation.
-    @trusted
-    {
-        ///
-        void rewind(FILE* stream);
-        ///
-        pure void clearerr(FILE* stream);
-        ///
-        pure int  feof(FILE* stream);
-        ///
-        pure int  ferror(FILE* stream);
-        ///
-        pure int  fileno(FILE* stream);
-    }
-
-    ///
-    int _snprintf(char* s, size_t n, in char* format, ...);
-    ///
-    int  snprintf(char* s, size_t n, in char* format, ...);
-
-    ///
-    int _vsnprintf(char* s, size_t n, in char* format, va_list arg);
-    ///
-    int  vsnprintf(char* s, size_t n, in char* format, va_list arg);
-
-    ///
-    int _lock_file(FILE *fp);
-    ///
-    int _unlock_file(FILE *fp);
-
-    ///
-    intptr_t _get_osfhandle(int fd);
-    int _open_osfhandle(intptr_t osfhandle, int flags);
-}
-else version( CRuntime_DigitalMars )
+version( CRuntime_DigitalMars )
 {
   // No unsafe pointer manipulation.
   extern (D) @trusted
@@ -948,7 +887,7 @@ else version( CRuntime_DigitalMars )
     ///
     alias _vsnprintf vsnprintf;
 }
-else version( CRuntime_Microsoft )
+else version( Windows )
 {
   // No unsafe pointer manipulation.
   @trusted
@@ -1234,8 +1173,8 @@ else version (Windows)
     int _wsopen(const wchar* filename, int oflag, int shflag, ...); ///
     int _close(int fd); ///
     FILE *_fdopen(int fd, const(char)* flags); ///
+    alias fdopen = _fdopen; ///
     FILE *_wfdopen(int fd, const(wchar)* flags); ///
-    alias _fdopen fdopen;
 }
 
 version (Windows)
