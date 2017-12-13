@@ -815,8 +815,11 @@ else version (X86_64)
     }
   }
 }
+else version (ARM)     {}
+else version (AArch64) {}
+else version (AnyPPC)  {}
+else version (MIPS64)  {}
 else
 {
-    version (LDC) {} else
     static assert(false, "Unsupported platform");
 }
