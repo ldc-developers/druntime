@@ -77,7 +77,10 @@ real sin(real x) @safe pure nothrow;       /* intrinsic */
  * indeterminate.
  */
 version (LDC)
-    long rndtol(real x) @safe pure nothrow { return stdc.llroundl(x); }
+    version (CRuntime_UClibc)
+        long rndtol(real x) @safe pure nothrow;
+    else
+        long rndtol(real x) @safe pure nothrow { return stdc.llroundl(x); }
 else
 long rndtol(real x) @safe pure nothrow;    /* intrinsic */
 
