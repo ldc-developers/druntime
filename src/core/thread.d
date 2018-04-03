@@ -2592,6 +2592,7 @@ else
                        sw $$22, 24($0);
                        sw $$23, 28($0);
                        .set  at;`, "r", regs.ptr);
+                __asm(".set  noat; sw $$29, 0($0); .set  at;", "r", &sp);
             }
             else version (MIPS64)
             {
