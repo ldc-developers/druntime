@@ -118,6 +118,28 @@ private struct _dynamicCompileConst
 {
 }
 
+/++
+ + When applied to a function, marks this function for dynamic compilation.
+ + Static version of function will be called via direct call but function
+ + body will still be available for jit facilities (e.g. jit bind).
+ + If both @dynamicCompile and @dynamicCompileIndirect attributes are
+ + applied to function, @dynamicCompile will get precedence.
+ +
+ + This attribute has no effect if dynamic compilation wasn't enabled with
+ + -enable-dynamic-compile
+ +
+ + Examples:
+ + ---
+ + import ldc.attributes;
+ +
+ + @dynamicCompileIndirect int foo() { return 42; }
+ + ---
+ +/
+immutable dynamicCompileIndirect = _dynamicCompileIndirect();
+private struct _dynamicCompileIndirect
+{
+}
+
 /**
  * Explicitly sets "fast math" for a function, enabling aggressive math
  * optimizations. These optimizations may dramatically change the outcome of
