@@ -128,7 +128,7 @@ private struct _dynamicCompileConst
  + statically compiled function (like normal functions). The function body
  + is made available for dynamic compilation with the jit facilities (e.g.
  + jit bind).
- + If both @dynamicCompile and @dynamicCompileIndirect attributes are
+ + If both @dynamicCompile and @dynamicCompileEmit attributes are
  + applied to function, @dynamicCompile will get precedence.
  +
  + This attribute has no effect if dynamic compilation wasn't enabled with
@@ -138,11 +138,11 @@ private struct _dynamicCompileConst
  + ---
  + import ldc.attributes;
  +
- + @dynamicCompileIndirect int foo() { return 42; }
+ + @dynamicCompileEmit int foo() { return 42; }
  + ---
  +/
-immutable dynamicCompileIndirect = _dynamicCompileIndirect();
-private struct _dynamicCompileIndirect
+immutable dynamicCompileEmit = _dynamicCompileEmit();
+private struct _dynamicCompileEmit
 {
 }
 
