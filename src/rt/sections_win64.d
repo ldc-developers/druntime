@@ -72,12 +72,50 @@ version(LDC)
 else
 shared(bool) conservative;
 
+version (MinGW)
+{
+    version (Win32)
+    {
+        extern extern(C) __gshared
+        {
+            byte _data_start__;
+            byte _bss_end__;
+        }
+    }
+    else version (Win64)
+    {
+        extern extern(C) __gshared
+        {
+            byte __data_start__;
+            byte __bss_end__;
+        }
+        alias _data_start__ = __data_start__;
+        alias _bss_end__ = __bss_end__;
+    }
+    else
+    {
+        static assert(false, "Unsupported platform");
+    }
+}
+
 void initSections() nothrow @nogc
 {
     _sections._moduleGroup = ModuleGroup(getModuleInfos());
 
-    // the ".data" image section includes both object file sections ".data" and ".bss"
-    void[] dataSection = findImageSection(".data");
+    version (CRuntime_Microsoft)
+    {
+        // the ".data" image section includes both object file sections ".data" and ".bss"
+        void[] dataSection = findImageSection(".data");
+    }
+    else version (MinGW)
+    {
+        void[] dataSection = (cast(void*)&_data_start__)[0 .. &_bss_end__ - &_data_start__];
+    }
+    else
+    {
+        static assert(false, "Unsupported platform");
+    }
+
     debug(PRINTF) printf("found .data section: [%p,+%llx]\n", dataSection.ptr,
                          cast(ulong)dataSection.length);
 

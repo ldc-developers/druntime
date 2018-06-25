@@ -47,7 +47,7 @@ else version (Darwin)
 }
 else version (CRuntime_DigitalMars)
     public import rt.sections_win32;
-else version (CRuntime_Microsoft)
+else version (Windows) // LDC: changed from `version (CRuntime_Microsoft)` to include MinGW as well
     public import rt.sections_win64;
 else version (CRuntime_Bionic)
     public import rt.sections_android;
