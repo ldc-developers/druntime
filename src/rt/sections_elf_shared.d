@@ -24,6 +24,7 @@ else enum SharedDarwin = false;
 static if (SharedELF || SharedDarwin):
 
 // debug = PRINTF;
+import core.elf;
 import core.memory;
 import core.stdc.stdio;
 import core.stdc.stdlib : calloc, exit, free, malloc, EXIT_FAILURE;
@@ -390,7 +391,7 @@ else
 version (OSX)
     private alias ImageHeader = mach_header*;
 else
-    private alias ImageHeader = dl_phdr_info;
+    private alias ImageHeader = SharedObject;
 
 extern(C) alias GetTLSAnchor = void* function() nothrow @nogc;
 
@@ -445,7 +446,7 @@ extern(C) void _d_dso_registry(void* arg)
         static if (SharedDarwin) pdso._getTLSAnchor = data._getTLSAnchor;
 
         ImageHeader header = void;
-        findImageHeaderForAddr(data._slot, &header) || assert(0);
+        findImageHeaderForAddr(data._slot, header) || assert(0);
 
         scanSegments(header, pdso);
 
@@ -726,15 +727,15 @@ version (Shared)
         !pthread_mutex_unlock(&_handleToDSOMutex) || assert(0);
     }
 
-    static if (SharedELF) void getDependencies(in ref dl_phdr_info info, ref Array!(DSO*) deps)
+    static if (SharedELF) void getDependencies(in ref SharedObject object, ref Array!(DSO*) deps)
     {
         // get the entries of the .dynamic section
         ElfW!"Dyn"[] dyns;
-        foreach (ref phdr; info.dlpi_phdr[0 .. info.dlpi_phnum])
+        foreach (ref phdr; object)
         {
             if (phdr.p_type == PT_DYNAMIC)
             {
-                auto p = cast(ElfW!"Dyn"*)(info.dlpi_addr + phdr.p_vaddr);
+                auto p = cast(ElfW!"Dyn"*)(object.baseAddress() + phdr.p_vaddr);
                 dyns = p[0 .. phdr.p_memsz / ElfW!"Dyn".sizeof];
                 break;
             }
@@ -746,15 +747,15 @@ version (Shared)
             if (dyn.d_tag == DT_STRTAB)
             {
                 version (CRuntime_Musl)
-                    strtab = cast(const(char)*)(info.dlpi_addr + dyn.d_un.d_ptr); // relocate
+                    strtab = cast(const(char)*)(object.baseAddress() + dyn.d_un.d_ptr); // relocate
                 else version (linux)
                     strtab = cast(const(char)*)dyn.d_un.d_ptr;
                 else version (FreeBSD)
-                    strtab = cast(const(char)*)(info.dlpi_addr + dyn.d_un.d_ptr); // relocate
+                    strtab = cast(const(char)*)(object.baseAddress() + dyn.d_un.d_ptr); // relocate
                 else version (NetBSD)
-                    strtab = cast(const(char)*)(info.dlpi_addr + dyn.d_un.d_ptr); // relocate
+                    strtab = cast(const(char)*)(object.baseAddress() + dyn.d_un.d_ptr); // relocate
                 else version (DragonFlyBSD)
-                    strtab = cast(const(char)*)(info.dlpi_addr + dyn.d_un.d_ptr); // relocate
+                    strtab = cast(const(char)*)(object.baseAddress() + dyn.d_un.d_ptr); // relocate
                 else
                     static assert(0, "unimplemented");
                 break;
@@ -798,21 +799,21 @@ version (Shared)
  * Scan segments in the image header and store
  * the TLS and writeable data segments in *pdso.
  */
-static if (SharedELF) void scanSegments(in ref dl_phdr_info info, DSO* pdso) nothrow @nogc
+static if (SharedELF) void scanSegments(in ref SharedObject object, DSO* pdso) nothrow @nogc
 {
-    foreach (ref phdr; info.dlpi_phdr[0 .. info.dlpi_phnum])
+    foreach (ref phdr; object)
     {
         switch (phdr.p_type)
         {
         case PT_LOAD:
             if (phdr.p_flags & PF_W) // writeable data segment
             {
-                auto beg = cast(void*)(info.dlpi_addr + phdr.p_vaddr);
+                auto beg = object.baseAddress() + phdr.p_vaddr;
                 pdso._gcRanges.insertBack(beg[0 .. phdr.p_memsz]);
             }
             version (Shared) if (phdr.p_flags & PF_X) // code segment
             {
-                auto beg = cast(void*)(info.dlpi_addr + phdr.p_vaddr);
+                auto beg = object.baseAddress() + phdr.p_vaddr;
                 pdso._codeSegments.insertBack(beg[0 .. phdr.p_memsz]);
             }
             break;
@@ -824,7 +825,7 @@ static if (SharedELF) void scanSegments(in ref dl_phdr_info info, DSO* pdso) not
                 // uClibc doesn't provide a 'dlpi_tls_modid' definition
             }
             else
-                pdso._tlsMod = info.dlpi_tls_modid;
+                pdso._tlsMod = object.info.dlpi_tls_modid;
             pdso._tlsSize = phdr.p_memsz;
             version (LDC)
             {
@@ -862,103 +863,17 @@ else static if (SharedDarwin) void scanSegments(mach_header* info, DSO* pdso)
     }
 }
 
-/**************************
- * Input:
- *      result  where the output is to be written; dl_phdr_info is an OS struct
- * Returns:
- *      true if found, and *result is filled in
- * References:
- *      http://linux.die.net/man/3/dl_iterate_phdr
- */
-bool findImageHeaderForAddr(in void* addr, ImageHeader* result=null) nothrow @nogc
+bool findImageHeaderForAddr(in void* addr, out ImageHeader result) nothrow @nogc
 {
-    version (linux)       enum IterateManually = true;
-    else version (NetBSD) enum IterateManually = true;
-    else                  enum IterateManually = false;
-
-    static if (IterateManually)
+    version (OSX)
     {
-        static struct DG { const(void)* addr; dl_phdr_info* result; }
-
-        extern(C) int callback(dl_phdr_info* info, size_t sz, void* arg) nothrow @nogc
-        {
-            auto p = cast(DG*)arg;
-            if (findSegmentForAddr(*info, p.addr))
-            {
-                if (p.result !is null) *p.result = *info;
-                return 1; // break;
-            }
-            return 0; // continue iteration
-        }
-
-        auto dg = DG(addr, result);
-
-        /* OS function that walks through the list of an application's shared objects and
-         * calls 'callback' once for each object, until either all shared objects
-         * have been processed or 'callback' returns a nonzero value.
-         */
-        return dl_iterate_phdr(&callback, &dg) != 0;
-    }
-    else version (OSX)
-    {
-        auto header = _dyld_get_image_header_containing_address(addr);
-        if (result) *result = header;
-        return !!header;
-    }
-    else version (FreeBSD)
-    {
-        return !!_rtld_addr_phdr(addr, result);
-    }
-    else version (DragonFlyBSD)
-    {
-        return !!_rtld_addr_phdr(addr, result);
+        result = _dyld_get_image_header_containing_address(addr);
+        return !!result;
     }
     else
-        static assert(0, "unimplemented");
-}
-
-/*********************************
- * Determine if 'addr' lies within shared object 'info'.
- * If so, return true and fill in 'result' with the corresponding ELF program header.
- */
-static if (SharedELF) bool findSegmentForAddr(in ref dl_phdr_info info, in void* addr, ElfW!"Phdr"* result=null) nothrow @nogc
-{
-    if (addr < cast(void*)info.dlpi_addr) // less than base address of object means quick reject
-        return false;
-
-    foreach (ref phdr; info.dlpi_phdr[0 .. info.dlpi_phnum])
     {
-        auto beg = cast(void*)(info.dlpi_addr + phdr.p_vaddr);
-        if (cast(size_t)(addr - beg) < phdr.p_memsz)
-        {
-            if (result !is null) *result = phdr;
-            return true;
-        }
+        return SharedObject.findForAddress(addr, result);
     }
-    return false;
-}
-
-version (linux) import core.sys.linux.errno : program_invocation_name;
-// should be in core.sys.freebsd.stdlib
-version (FreeBSD) extern(C) const(char)* getprogname() nothrow @nogc;
-version (OSX) extern(C) const(char)* getprogname() nothrow @nogc;
-version (DragonFlyBSD) extern(C) const(char)* getprogname() nothrow @nogc;
-version (NetBSD) extern(C) const(char)* getprogname() nothrow @nogc;
-
-@property const(char)* progname() nothrow @nogc
-{
-    version (linux) return program_invocation_name;
-    version (FreeBSD) return getprogname();
-    version (OSX) return getprogname();
-    version (DragonFlyBSD) return getprogname();
-    version (NetBSD) return getprogname();
-}
-
-const(char)[] dsoName(const char* dlpi_name) nothrow @nogc
-{
-    // the main executable doesn't have a name in its dlpi_name field
-    const char* p = dlpi_name[0] != 0 ? dlpi_name : progname;
-    return p[0 .. strlen(p)];
 }
 
 /**************************
