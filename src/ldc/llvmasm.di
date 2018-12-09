@@ -42,11 +42,11 @@ pragma(LDC_inline_asm)
  + ---
  +/
 pragma(LDC_inline_ir)
-    R __ir(string s, R, P...)(P params) pure nothrow @nogc;
+    R __ir(string s, R, P...)(P params) @trusted nothrow @nogc;
 
 /// Ditto
 pragma(LDC_inline_ir)
-    R __ir_trusted(string s, R, P...)(P params) @trusted pure nothrow @nogc;
+    R __ir_pure(string s, R, P...)(P params) @trusted nothrow @nogc pure;
 
 
 /++
@@ -67,9 +67,9 @@ pragma(LDC_inline_ir)
  + ---
  +/
 pragma(LDC_inline_ir)
-    R __irEx(string prefix, string code, string suffix, R, P...)(P) pure nothrow @nogc;
+    R __irEx(string prefix, string code, string suffix, R, P...)(P) @trusted nothrow @nogc;
 
 /// Ditto
 pragma(LDC_inline_ir)
-    R __irEx_trusted(string prefix, string code, string suffix, R, P...)(P) @trusted pure nothrow @nogc;
+    R __irEx_pure(string prefix, string code, string suffix, R, P...)(P) @trusted nothrow @nogc pure;
 
