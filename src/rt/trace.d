@@ -850,18 +850,18 @@ else
             // time counter (it is a counter of CPU cycles, where here we want a time clock).
             // Also, priviledged execution rights are needed to enable correct counting with
             // ldc.intrinsics.llvm_readcyclecounter on AArch64.
-            void QueryPerformanceCounter(timer_t* ctr)
+            extern (D) void QueryPerformanceCounter(timer_t* ctr)
             {
                 *ctr = __asm!ulong("mrs $0, cntvct_el0", "=r");
             }
-            void QueryPerformanceFrequency(timer_t* freq)
+            extern (D) void QueryPerformanceFrequency(timer_t* freq)
             {
                 *freq = __asm!ulong("mrs $0, cntfrq_el0", "=r");
             }
         }
         else
         {
-            void QueryPerformanceCounter(timer_t* ctr)
+            extern (D) void QueryPerformanceCounter(timer_t* ctr)
             {
                 import ldc.intrinsics: llvm_readcyclecounter;
                 *ctr = llvm_readcyclecounter();
