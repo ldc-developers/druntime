@@ -139,10 +139,10 @@ version (LDC)
                 asm @trusted pure nothrow
                 {
                     naked;
-                    push RCX;                // push exp (8 bytes), passed in ECX
+                    push RDX;                // push exp (8 bytes), passed in EDX
                     fild int ptr [RSP];      // push exp onto FPU stack
-                    pop RCX;                 // return stack to initial state
-                    fld real ptr [RDX];      // push n   onto FPU stack, passed in [RDX]
+                    pop RDX;                 // return stack to initial state
+                    fld real ptr [RCX];      // push n   onto FPU stack, passed in [RCX]
                     fscale;                  // ST(0) = ST(0) * 2^ST(1)
                     fstp ST(1);              // pop stack maintaining top value => function return value
                     ret;                     // no arguments passed via stack
