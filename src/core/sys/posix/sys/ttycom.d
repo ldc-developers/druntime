@@ -110,6 +110,8 @@ version (OSX)
 }
 else version(FreeBSD)
 {
+    import std.conv;
+
     struct winsize {
         ushort  ws_row;     // rows, in characters
         ushort  ws_col;     // columns, in characters
@@ -154,20 +156,20 @@ else version(FreeBSD)
     					// 100 unused
     enum uint TIOCSTAT  = _IO('t', 101);       // simulate ^T status message
     enum uint TIOCUCNTL = _IOW!(int)('t', 102); // pty: set/clr usr cntl mode
-    enum uint   UIOCCMD(n) = _IO('u', n);      // usr cntl op "n"
+    enum uint   UIOCCMD(n) = _IO('u', n);       // usr cntl op "n"
     enum uint TIOCSWINSZ = _IOW!(winsize)('t', 103); // set window size
     enum uint TIOCGWINSZ = _IOR!(winsize)('t', 104); // get window size
     					// 105 unused
     enum uint TIOCMGET  = _IOR!(int)('t', 106); // get all modem bits
-    enum uint   TIOCM_LE  = 0001;               // line enable
-    enum uint   TIOCM_DTR = 0002;               // data terminal ready
-    enum uint   TIOCM_RTS = 0004;               // request to send
-    enum uint   TIOCM_ST  = 0010;               // secondary transmit
-    enum uint   TIOCM_SR  = 0020;               // secondary receive
-    enum uint   TIOCM_CTS = 0040;               // clear to send
-    enum uint   TIOCM_DCD = 0100;               // data carrier detect
-    enum uint   TIOCM_RI  = 0200;               // ring indicate
-    enum uint   TIOCM_DSR = 0400;               // data set ready
+    enum uint   TIOCM_LE  = 1;                  // line enable
+    enum uint   TIOCM_DTR = 2;                  // data terminal ready
+    enum uint   TIOCM_RTS = 4;                  // request to send
+    enum uint   TIOCM_ST  = octal!10;  // secondary transmit
+    enum uint   TIOCM_SR  = octal!20;  // secondary receive
+    enum uint   TIOCM_CTS = octal!40;  // clear to send
+    enum uint   TIOCM_DCD = octal!100; // data carrier detect
+    enum uint   TIOCM_RI  = octal!200; // ring indicate
+    enum uint   TIOCM_DSR = octal!400; // data set ready
     enum uint   TIOCM_CD  = TIOCM_DCD;
     enum uint   TIOCM_CAR = TIOCM_DCD;
     enum uint   TIOCM_RNG = TIOCM_RI;

@@ -357,14 +357,6 @@ else version (FreeBSD)
         void* buf;
     }
 
-    struct winsize
-    {
-        ushort ws_row;
-        ushort ws_col;
-        ushort ws_xpixel;
-        ushort ws_ypixel;
-    }
-
     int ioctl(int, c_ulong, ...);
 }
 else version (NetBSD)

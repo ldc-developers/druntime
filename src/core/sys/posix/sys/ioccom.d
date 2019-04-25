@@ -107,7 +107,7 @@ else version(FreeBSD)
     {
         return _IOC(IOC_VOID, cast(uint)g, cast(uint)n, cast(size_t)0);
     }
-    uint _IOWINT(char g, int n)
+    uint _IOWINT(T=int)(char g, int n)
     {
         return _IOC(IOC_VOID, cast(uint)g, cast(uint)n, int.sizeof);
     }
