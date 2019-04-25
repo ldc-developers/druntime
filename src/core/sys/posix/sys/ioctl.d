@@ -15,6 +15,7 @@
 module core.sys.posix.sys.ioctl;
 
 import core.stdc.config;
+public import core.sys.posix.sys.ttycom;
 
 version (OSX)
     version = Darwin;
