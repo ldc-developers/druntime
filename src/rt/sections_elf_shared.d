@@ -938,6 +938,10 @@ version(LDC)
         extern(C) void* __tls_get_addr_opt(tls_index* ti);
         alias __tls_get_addr = __tls_get_addr_opt;
     }
+    else version(SystemZ)
+    {
+        extern(C) void* __tls_get_addr_internal(tls_index* ti);
+    }
     else
         extern(C) void* __tls_get_addr(tls_index* ti);
 }
@@ -969,6 +973,8 @@ else version(MIPS32)
     enum TLS_DTV_OFFSET = 0x8000;
 else version(MIPS64)
     enum TLS_DTV_OFFSET = 0x8000;
+else version(SystemZ)
+    enum TLS_DTV_OFFSET = 0x;
 else
     static assert( false, "Platform not supported." );
 
@@ -1006,6 +1012,16 @@ void[] getTLSRange(size_t mod, size_t sz)
 
         // base offset
         auto ti = tls_index(mod, 0);
-        return (__tls_get_addr(&ti)-TLS_DTV_OFFSET)[0 .. sz];
+        version (SystemZ)
+        {
+            import ldc.llvmasm;
+            auto adr = cast(void *)__tls_get_addr_internal(&ti)
+                        + __asm!ulong("ear $0,%a0; sllg $0,$0,32; ear $0,%a1", "=r");
+            return adr[0 .. sz];
+        }
+        else
+        {
+            return (__tls_get_addr(&ti)-TLS_DTV_OFFSET)[0 .. sz];
+        }
     }
 }
