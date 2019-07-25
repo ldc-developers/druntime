@@ -16,6 +16,9 @@ else version (DragonFlyBSD) enum SharedELF = true;
 else enum SharedELF = false;
 static if (SharedELF):
 
+version (linux) version (PPC) version = (linux_PPC_Any);
+version (linux) version (PPC64) version = (linux_PPC_Any);
+
 // debug = PRINTF;
 import core.memory;
 import core.stdc.stdio;
@@ -928,12 +931,7 @@ struct tls_index
 
 version(LDC)
 {
-    version(PPC)
-    {
-        extern(C) void* __tls_get_addr_opt(tls_index* ti);
-        alias __tls_get_addr = __tls_get_addr_opt;
-    }
-    else version(PPC64)
+    version(linux_PPC_Any)
     {
         extern(C) void* __tls_get_addr_opt(tls_index* ti);
         alias __tls_get_addr = __tls_get_addr_opt;
