@@ -16,8 +16,8 @@ else version (DragonFlyBSD) enum SharedELF = true;
 else enum SharedELF = false;
 static if (SharedELF):
 
-version (linux) version (PPC) version = (linux_PPC_Any);
-version (linux) version (PPC64) version = (linux_PPC_Any);
+version (linux) version (PPC) version = linux_PPC_Any;
+version (linux) version (PPC64) version = linux_PPC_Any;
 
 // debug = PRINTF;
 import core.memory;
