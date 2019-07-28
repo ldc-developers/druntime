@@ -928,10 +928,10 @@ struct tls_index
 
 version(LDC)
 
+{
 version (linux) version (PPC) version = linux_PPC_Any;
 version (linux) version (PPC64) version = linux_PPC_Any;
 
-{
     version(linux_PPC_Any)
     {
         extern(C) void* __tls_get_addr_opt(tls_index* ti);
