@@ -612,6 +612,8 @@ pragma(LDC_intrinsic, "llvm.umul.with.overflow.i#")
     OverflowRet!(T) llvm_umul_with_overflow(T)(T lhs, T rhs)
         if (__traits(isIntegral, T));
 
+version (INTRINSICS_FROM_800)
+{
 //
 // SATURATION ARITHMETIC INTRINSICS
 //
@@ -654,6 +656,7 @@ pragma(LDC_intrinsic, "llvm.ssub.sat.i#")
 pragma(LDC_intrinsic, "llvm.usub.sat.i#")
     T llvm_usub_sat(T)(T lhs, T rhs)
         if (__traits(isIntegral, T));
+}
 
 //
 // GENERAL INTRINSICS
