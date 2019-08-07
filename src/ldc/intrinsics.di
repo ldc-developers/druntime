@@ -435,10 +435,6 @@ pragma(LDC_intrinsic, "llvm.maximum.f#")
 // BIT MANIPULATION INTRINSICS
 //
 
-//
-// BIT MANIPULATION INTRINSICS
-//
-
 /// The 'llvm.bitreverse' family of intrinsics is used to reverse the bitpattern
 /// of an integer value; for example 0b10110110 becomes 0b01101101.
 pragma(LDC_intrinsic, "llvm.bitreverse.i#")
