@@ -671,7 +671,7 @@ else version (LDC)
     Returns:
         Vector
     */
-    pragma(inline, true);
+    pragma(inline, true)
     V loadUnaligned(V)(const V* p)
         if (is(V == void16) ||
             is(V == byte16) ||
@@ -681,7 +681,20 @@ else version (LDC)
             is(V == int4) ||
             is(V == uint4) ||
             is(V == long2) ||
-            is(V == ulong2))
+            is(V == ulong2) ||
+            is(V == double2) ||
+            is(V == float4) ||
+            is(V == void32) ||
+            is(V == double4) ||
+            is(V == float8) ||
+            is(V == byte32) ||
+            is(V == ubyte32) || 
+            is(V == short16) ||
+            is(V == ushort16) ||
+            is(V == int8) ||   
+            is(V == uint8) || 
+            is(V == long4) ||
+            is(V == ulong4))
     {
         static import ldc.simd;
         alias Element = typeof(V.array[0]);
@@ -697,7 +710,7 @@ else version (LDC)
     Returns:
        value
     */
-    pragma(inline, true);
+    pragma(inline, true)
     V storeUnaligned(V)(V* p, V value)
         if (is(V == void16) ||
             is(V == byte16) ||
@@ -709,7 +722,18 @@ else version (LDC)
             is(V == long2) ||
             is(V == ulong2) ||
             is(V == double2) ||
-            is(V == float4))
+            is(V == float4) ||
+            is(V == void32) ||
+            is(V == double4) ||
+            is(V == float8) ||
+            is(V == byte32) ||
+            is(V == ubyte32) || 
+            is(V == short16) ||
+            is(V == ushort16) ||
+            is(V == int8) ||   
+            is(V == uint8) || 
+            is(V == long4) ||
+            is(V == ulong4))
     {
         static import ldc.simd;
         alias Element = typeof(V.array[0]);
@@ -737,15 +761,13 @@ else version (LDC)
        $(TROW false, 3, prefetchw)
        )
     */
-    pragma(inline, true);
+    pragma(inline, true)
     void prefetch(bool writeFetch, ubyte locality)(const(void)* address)
     {
         import ldc.intrinsics : llvm_prefetch;
         enum dataCache = 1;
-        static if (writeFetch)
-            llvm_prefetch(address, writeFetch, 4, dataCache);
-        else static if (locality < 4)
-            llvm_prefetch(address, writeFetch, 3 - locality, dataCache);
+        static if (locality < 4)
+            llvm_prefetch(address, writeFetch, locality, dataCache);
         else
             static assert(0, "0..3 expected for locality");
     }
@@ -794,7 +816,18 @@ version (DMD_LDC)
             test!long2();
             test!ulong2();
             test!double2();
-            test!float4();
+            test!float4)
+            test!void32();
+            test!double4();
+            test!float8();
+            test!byte32();
+            test!ubyte32();
+            test!short16();
+            test!ushort16()
+            test!int8();
+            test!uint8();
+            test!long4();
+            test!ulong4();
         }
     }
 
@@ -843,7 +876,18 @@ version (DMD_LDC)
             test!long2();
             test!ulong2();
             test!double2();
-            test!float4();
+            test!float4)
+            test!void32();
+            test!double4();
+            test!float8();
+            test!byte32();
+            test!ubyte32();
+            test!short16();
+            test!ushort16()
+            test!int8();
+            test!uint8();
+            test!long4();
+            test!ulong4();
         }
     }
 }
