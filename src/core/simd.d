@@ -688,11 +688,11 @@ else version (LDC)
             is(V == double4) ||
             is(V == float8) ||
             is(V == byte32) ||
-            is(V == ubyte32) || 
+            is(V == ubyte32) ||
             is(V == short16) ||
             is(V == ushort16) ||
-            is(V == int8) ||   
-            is(V == uint8) || 
+            is(V == int8) ||
+            is(V == uint8) ||
             is(V == long4) ||
             is(V == ulong4))
     {
@@ -727,11 +727,11 @@ else version (LDC)
             is(V == double4) ||
             is(V == float8) ||
             is(V == byte32) ||
-            is(V == ubyte32) || 
+            is(V == ubyte32) ||
             is(V == short16) ||
             is(V == ushort16) ||
-            is(V == int8) ||   
-            is(V == uint8) || 
+            is(V == int8) ||
+            is(V == uint8) ||
             is(V == long4) ||
             is(V == ulong4))
     {
@@ -816,7 +816,7 @@ version (DMD_LDC)
             test!long2();
             test!ulong2();
             test!double2();
-            test!float4)
+            test!float4();
             test!void32();
             test!double4();
             test!float8();
@@ -876,7 +876,7 @@ version (DMD_LDC)
             test!long2();
             test!ulong2();
             test!double2();
-            test!float4)
+            test!float4();
             test!void32();
             test!double4();
             test!float8();
