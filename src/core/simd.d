@@ -695,7 +695,7 @@ else version (LDC)
        p = pointer to vector
        value = value to store
     Returns:
-       Vector
+       value
     */
     pragma(inline, true);
     V storeUnaligned(V)(V* p, V value)
