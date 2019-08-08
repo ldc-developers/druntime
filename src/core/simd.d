@@ -673,28 +673,7 @@ else version (LDC)
     */
     pragma(inline, true)
     V loadUnaligned(V)(const V* p)
-        if (is(V == void16) ||
-            is(V == byte16) ||
-            is(V == ubyte16) ||
-            is(V == short8) ||
-            is(V == ushort8) ||
-            is(V == int4) ||
-            is(V == uint4) ||
-            is(V == long2) ||
-            is(V == ulong2) ||
-            is(V == double2) ||
-            is(V == float4) ||
-            is(V == void32) ||
-            is(V == double4) ||
-            is(V == float8) ||
-            is(V == byte32) ||
-            is(V == ubyte32) ||
-            is(V == short16) ||
-            is(V == ushort16) ||
-            is(V == int8) ||
-            is(V == uint8) ||
-            is(V == long4) ||
-            is(V == ulong4))
+        if(is(V == __vector))
     {
         static import ldc.simd;
         alias Element = typeof(V.array[0]);
@@ -712,28 +691,7 @@ else version (LDC)
     */
     pragma(inline, true)
     V storeUnaligned(V)(V* p, V value)
-        if (is(V == void16) ||
-            is(V == byte16) ||
-            is(V == ubyte16) ||
-            is(V == short8) ||
-            is(V == ushort8) ||
-            is(V == int4) ||
-            is(V == uint4) ||
-            is(V == long2) ||
-            is(V == ulong2) ||
-            is(V == double2) ||
-            is(V == float4) ||
-            is(V == void32) ||
-            is(V == double4) ||
-            is(V == float8) ||
-            is(V == byte32) ||
-            is(V == ubyte32) ||
-            is(V == short16) ||
-            is(V == ushort16) ||
-            is(V == int8) ||
-            is(V == uint8) ||
-            is(V == long4) ||
-            is(V == ulong4))
+        if(is(V == __vector))
     {
         static import ldc.simd;
         alias Element = typeof(V.array[0]);
