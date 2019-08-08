@@ -36,6 +36,15 @@ template Vector(T)
     alias __vector(T) Vector;
 }
 
+version (DigitalMars)
+{
+    version = DMD_LDC;
+}
+else version (LDC)
+{
+    version = DMD_LDC;
+}
+
 /* Handy aliases
  */
 static if (is(Vector!(void[16])))   alias Vector!(void[16])  void16;        ///
@@ -621,6 +630,130 @@ version (D_SIMD)
             return cast(V)__simd(XMM.LODDQU, *cast(const void16*)p);
     }
 
+    /*************************************
+    * Store vector to unaligned address.
+    * This is a compiler intrinsic.
+    * Params:
+    *    p = pointer to vector
+    *    value = value to store
+    * Returns:
+    *    value
+    */
+
+    V storeUnaligned(V)(V* p, V value)
+        if (is(V == void16) ||
+            is(V == byte16) ||
+            is(V == ubyte16) ||
+            is(V == short8) ||
+            is(V == ushort8) ||
+            is(V == int4) ||
+            is(V == uint4) ||
+            is(V == long2) ||
+            is(V == ulong2) ||
+            is(V == double2) ||
+            is(V == float4))
+    {
+        pragma(inline, true);
+        static if (is(V == double2))
+            return cast(V)__simd_sto(XMM.STOUPD, *cast(void16*)p, value);
+        else static if (is(V == float4))
+            return cast(V)__simd_sto(XMM.STOUPS, *cast(void16*)p, value);
+        else
+            return cast(V)__simd_sto(XMM.STODQU, *cast(void16*)p, value);
+    }
+}
+else version (LDC)
+{
+    /**
+    Load unaligned vector from address.
+    Params:
+        p = pointer to vector
+    Returns:
+        Vector
+    */
+    pragma(inline, true);
+    V loadUnaligned(V)(const V* p)
+        if (is(V == void16) ||
+            is(V == byte16) ||
+            is(V == ubyte16) ||
+            is(V == short8) ||
+            is(V == ushort8) ||
+            is(V == int4) ||
+            is(V == uint4) ||
+            is(V == long2) ||
+            is(V == ulong2))
+    {
+        static import ldc.simd;
+        alias Element = typeof(V.array[0]);
+        return ldc.simd.loadUnaligned!V(cast(const(Element)*) p);
+    }
+
+    /**
+    Store vector to unaligned address.
+    This is a compiler intrinsic.
+    Params:
+       p = pointer to vector
+       value = value to store
+    Returns:
+       Vector
+    */
+    pragma(inline, true);
+    V storeUnaligned(V)(V* p, V value)
+        if (is(V == void16) ||
+            is(V == byte16) ||
+            is(V == ubyte16) ||
+            is(V == short8) ||
+            is(V == ushort8) ||
+            is(V == int4) ||
+            is(V == uint4) ||
+            is(V == long2) ||
+            is(V == ulong2) ||
+            is(V == double2) ||
+            is(V == float4))
+    {
+        static import ldc.simd;
+        alias Element = typeof(V.array[0]);
+        ldc.simd.storeUnaligned!V(value, cast(Element*) p);
+        return value;
+    }
+
+    /**
+    Emit prefetch instruction.
+    Params:
+       address = address to be prefetched
+       writeFetch = true for write fetch, false for read fetch
+       locality = 0..3 (0 meaning least local, 3 meaning most local)
+    Note:
+       The Intel mappings are:
+       $(TABLE
+       $(THEAD writeFetch, locality, Instruction)
+       $(TROW false, 0, prefetchnta)
+       $(TROW false, 1, prefetch2)
+       $(TROW false, 2, prefetch1)
+       $(TROW false, 3, prefetch0)
+       $(TROW false, 0, prefetchw)
+       $(TROW false, 1, prefetchw)
+       $(TROW false, 2, prefetchw)
+       $(TROW false, 3, prefetchw)
+       )
+    */
+    pragma(inline, true);
+    void prefetch(bool writeFetch, ubyte locality)(const(void)* address)
+    {
+        import ldc.intrinsics : llvm_prefetch;
+        enum dataCache = 1;
+        static if (writeFetch)
+            llvm_prefetch(address, writeFetch, 4, dataCache);
+        else static if (locality < 4)
+            llvm_prefetch(address, writeFetch, 3 - locality, dataCache);
+        else
+            static assert(0, "0..3 expected for locality");
+    }
+}
+
+version (DMD_LDC)
+{
+    /// loadUnaligned unittest
     @system
     unittest
     {
@@ -665,38 +798,7 @@ version (D_SIMD)
         }
     }
 
-    /*************************************
-    * Store vector to unaligned address.
-    * This is a compiler intrinsic.
-    * Params:
-    *    p = pointer to vector
-    *    value = value to store
-    * Returns:
-    *    value
-    */
-
-    V storeUnaligned(V)(V* p, V value)
-        if (is(V == void16) ||
-            is(V == byte16) ||
-            is(V == ubyte16) ||
-            is(V == short8) ||
-            is(V == ushort8) ||
-            is(V == int4) ||
-            is(V == uint4) ||
-            is(V == long2) ||
-            is(V == ulong2) ||
-            is(V == double2) ||
-            is(V == float4))
-    {
-        pragma(inline, true);
-        static if (is(V == double2))
-            return cast(V)__simd_sto(XMM.STOUPD, *cast(void16*)p, value);
-        else static if (is(V == float4))
-            return cast(V)__simd_sto(XMM.STOUPS, *cast(void16*)p, value);
-        else
-            return cast(V)__simd_sto(XMM.STODQU, *cast(void16*)p, value);
-    }
-
+    /// storeUnaligned unittest
     @system
     unittest
     {
