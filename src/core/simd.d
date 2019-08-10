@@ -775,17 +775,19 @@ version (DMD_LDC)
             test!ulong2();
             test!double2();
             test!float4();
+            /*
             test!void32();
             test!double4();
             test!float8();
             test!byte32();
             test!ubyte32();
             test!short16();
-            test!ushort16()
+            test!ushort16();
             test!int8();
             test!uint8();
             test!long4();
             test!ulong4();
+            */
         }
     }
 
@@ -824,7 +826,7 @@ version (DMD_LDC)
                 }
             }
 
-            test!void16();
+            //test!void16();
             test!byte16();
             test!ubyte16();
             test!short8();
@@ -835,17 +837,19 @@ version (DMD_LDC)
             test!ulong2();
             test!double2();
             test!float4();
+            /*
             test!void32();
             test!double4();
             test!float8();
             test!byte32();
             test!ubyte32();
             test!short16();
-            test!ushort16()
+            test!ushort16();
             test!int8();
             test!uint8();
             test!long4();
             test!ulong4();
+            */
         }
     }
 }
