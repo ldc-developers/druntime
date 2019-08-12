@@ -775,19 +775,6 @@ version (DMD_LDC)
             test!ulong2();
             test!double2();
             test!float4();
-            /*
-            test!void32();
-            test!double4();
-            test!float8();
-            test!byte32();
-            test!ubyte32();
-            test!short16();
-            test!ushort16();
-            test!int8();
-            test!uint8();
-            test!long4();
-            test!ulong4();
-            */
         }
     }
 
@@ -796,12 +783,12 @@ version (DMD_LDC)
     unittest
     {
         // Memory to store the vector to:
-        // Should have enough data to test all 16-byte alignments, and still
-        // have room for a 16-byte vector
-        ubyte[32] data;
+        // Should have enough data to test all 512-byte alignments, and still
+        // have room for a 512-byte vector
+        ubyte[1024] data;
 
-        // to test all alignments from 1 ~ 16
-        foreach (i; 0..16)
+        // to test all alignments from 1 ~ 512
+        foreach (i; 0..512)
         {
             ubyte* d = &data[i];
 
@@ -826,30 +813,48 @@ version (DMD_LDC)
                 }
             }
 
-            //test!void16();
-            test!byte16();
-            test!ubyte16();
-            test!short8();
-            test!ushort8();
-            test!int4();
-            test!uint4();
-            test!long2();
-            test!ulong2();
-            test!double2();
-            test!float4();
-            /*
-            test!void32();
-            test!double4();
-            test!float8();
-            test!byte32();
-            test!ubyte32();
-            test!short16();
-            test!ushort16();
-            test!int8();
-            test!uint8();
-            test!long4();
-            test!ulong4();
-            */
+            static string size1Tests(string T)()
+            {
+                string res;
+                res ~= "test!(__vector("~T~"[1]))();";
+                res ~= "test!(__vector("~T~"[2]))();";
+                res ~= "test!(__vector("~T~"[4]))();";
+                return res;
+            }
+
+            static string generalTests(string T, string size)()
+            {
+                string res;
+                res ~= "test!(__vector("~T~"[8 / "~size~"]))();";
+                res ~= "test!(__vector("~T~"[16 / "~size~"]))();";
+                res ~= "test!(__vector("~T~"[32 / "~size~"]))();";
+                res ~= "test!(__vector("~T~"[64 / "~size~"]))();";
+                res ~= "test!(__vector("~T~"[128 / "~size~"]))();";
+                res ~= "test!(__vector("~T~"[256 / "~size~"]))();";
+                res ~= "test!(__vector("~T~"[512 / "~size~"]))();";
+                return res;
+            }
+            mixin(size1Tests!("void")());
+            mixin(size1Tests!("byte")());
+            mixin(size1Tests!("ubyte")());
+
+            test!(__vector(short[2]))();
+            test!(__vector(ushort[2]))();
+
+            mixin(generalTests!("void", "1")());
+            mixin(generalTests!("byte", "1")());
+            mixin(generalTests!("ubyte", "1")());
+
+            mixin(generalTests!("short", "2")());
+            mixin(generalTests!("ushort", "2")());
+
+            mixin(generalTests!("int", "4")());
+            mixin(generalTests!("uint", "4")());
+            mixin(generalTests!("float", "4")());
+
+            mixin(generalTests!("long", "8")());
+            mixin(generalTests!("ulong", "8")());
+            mixin(generalTests!("double", "8")());
         }
     }
 }
