@@ -664,41 +664,7 @@ version (D_SIMD)
 }
 else version (LDC)
 {
-    /**
-    Load unaligned vector from address.
-    Params:
-        p = pointer to vector
-    Returns:
-        Vector
-    */
-    pragma(inline, true)
-    V loadUnaligned(V)(const V* p)
-        if(is(V == __vector))
-    {
-        static import ldc.simd;
-        alias Element = typeof(V.array[0]);
-        return ldc.simd.loadUnaligned!V(cast(const(Element)*) p);
-    }
-
-    /**
-    Store vector to unaligned address.
-    This is a compiler intrinsic.
-    Params:
-       p = pointer to vector
-       value = value to store
-    Returns:
-       value
-    */
-    pragma(inline, true)
-    V storeUnaligned(V)(V* p, V value)
-        if(is(V == __vector))
-    {
-        static import ldc.simd;
-        alias Element = typeof(V.array[0]);
-        ldc.simd.storeUnaligned!V(value, cast(Element*) p);
-        return value;
-    }
-
+    public import ldc.simd : loadUnaligned, storeUnaligned;
     /**
     Emit prefetch instruction.
     Params:
