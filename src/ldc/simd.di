@@ -207,7 +207,7 @@ if(is(typeof(llvmVecType!V)))
     alias BaseType!V ElementType;
 
     pragma(inline, true)
-    deprecated("This is the DMD interface, use it only for DMD compatibility. Otherwise, please use the LDC interface.")
+    /// Deprecated: This is the DMD interface, use it only for DMD compatibility. Otherwise, please use the LDC interface.
     V loadUnaligned(const V* p)
     {
         // Forward to LDC version.
@@ -240,7 +240,7 @@ if(is(typeof(llvmVecType!V)))
     alias BaseType!V ElementType;
 
     pragma(inline, true)
-    deprecated("This is the DMD interface, use it only for DMD compatibility. Otherwise, please use the LDC interface.")
+    /// Deprecated: This is the DMD interface, use it only for DMD compatibility. Otherwise, please use the LDC interface.
     V storeUnaligned(V* p, V value)
     {
         // Forward to LDC version.
