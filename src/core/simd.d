@@ -36,15 +36,6 @@ template Vector(T)
     alias __vector(T) Vector;
 }
 
-version (DigitalMars)
-{
-    version = DMD_LDC;
-}
-else version (LDC)
-{
-    version = DMD_LDC;
-}
-
 /* Handy aliases
  */
 static if (is(Vector!(void[16])))   alias Vector!(void[16])  void16;        ///
@@ -74,7 +65,27 @@ version (all) // LDC: was D_AVX
     static if (is(Vector!(ulong[4])))   alias Vector!(ulong[4])   ulong4;        ///
 }
 
-version (D_SIMD)
+version (LDC)
+{
+    public import ldc.simd : loadUnaligned, storeUnaligned;
+
+    /*********************
+    * Emit prefetch instruction.
+    * Params:
+    *    address = address to be prefetched
+    *    writeFetch = true for write fetch, false for read fetch
+    *    locality = 0..3 (0 meaning least local, 3 meaning most local)
+    */
+    pragma(inline, true)
+    void prefetch(bool writeFetch, ubyte locality)(const(void)* address)
+    {
+        import ldc.intrinsics : llvm_prefetch;
+        static assert(locality < 4, "0..3 expected for locality");
+        enum dataCache = 1;
+        llvm_prefetch(address, writeFetch, locality, dataCache);
+    }
+}
+else version (D_SIMD)
 {
     /** XMM opcodes that conform to the following:
     *
@@ -629,77 +640,8 @@ version (D_SIMD)
         else
             return cast(V)__simd(XMM.LODDQU, *cast(const void16*)p);
     }
+} // D_SIMD (keep loadUnaligned unittest for LDC)
 
-    /*************************************
-    * Store vector to unaligned address.
-    * This is a compiler intrinsic.
-    * Params:
-    *    p = pointer to vector
-    *    value = value to store
-    * Returns:
-    *    value
-    */
-
-    V storeUnaligned(V)(V* p, V value)
-        if (is(V == void16) ||
-            is(V == byte16) ||
-            is(V == ubyte16) ||
-            is(V == short8) ||
-            is(V == ushort8) ||
-            is(V == int4) ||
-            is(V == uint4) ||
-            is(V == long2) ||
-            is(V == ulong2) ||
-            is(V == double2) ||
-            is(V == float4))
-    {
-        pragma(inline, true);
-        static if (is(V == double2))
-            return cast(V)__simd_sto(XMM.STOUPD, *cast(void16*)p, value);
-        else static if (is(V == float4))
-            return cast(V)__simd_sto(XMM.STOUPS, *cast(void16*)p, value);
-        else
-            return cast(V)__simd_sto(XMM.STODQU, *cast(void16*)p, value);
-    }
-}
-else version (LDC)
-{
-    public import ldc.simd : loadUnaligned, storeUnaligned;
-    /**
-    Emit prefetch instruction.
-    Params:
-       address = address to be prefetched
-       writeFetch = true for write fetch, false for read fetch
-       locality = 0..3 (0 meaning least local, 3 meaning most local)
-    Note:
-       The Intel mappings are:
-       $(TABLE
-       $(THEAD writeFetch, locality, Instruction)
-       $(TROW false, 0, prefetchnta)
-       $(TROW false, 1, prefetch2)
-       $(TROW false, 2, prefetch1)
-       $(TROW false, 3, prefetch0)
-       $(TROW false, 0, prefetchw)
-       $(TROW false, 1, prefetchw)
-       $(TROW false, 2, prefetchw)
-       $(TROW false, 3, prefetchw)
-       )
-    */
-    pragma(inline, true)
-    void prefetch(bool writeFetch, ubyte locality)(const(void)* address)
-    {
-        import ldc.intrinsics : llvm_prefetch;
-        enum dataCache = 1;
-        static if (locality < 4)
-            llvm_prefetch(address, writeFetch, locality, dataCache);
-        else
-            static assert(0, "0..3 expected for locality");
-    }
-}
-
-version (DMD_LDC)
-{
-    /// loadUnaligned unittest
     @system
     unittest
     {
@@ -744,17 +686,51 @@ version (DMD_LDC)
         }
     }
 
-    /// storeUnaligned unittest
+version (D_SIMD) // LDC
+{
+    /*************************************
+    * Store vector to unaligned address.
+    * This is a compiler intrinsic.
+    * Params:
+    *    p = pointer to vector
+    *    value = value to store
+    * Returns:
+    *    value
+    */
+
+    V storeUnaligned(V)(V* p, V value)
+        if (is(V == void16) ||
+            is(V == byte16) ||
+            is(V == ubyte16) ||
+            is(V == short8) ||
+            is(V == ushort8) ||
+            is(V == int4) ||
+            is(V == uint4) ||
+            is(V == long2) ||
+            is(V == ulong2) ||
+            is(V == double2) ||
+            is(V == float4))
+    {
+        pragma(inline, true);
+        static if (is(V == double2))
+            return cast(V)__simd_sto(XMM.STOUPD, *cast(void16*)p, value);
+        else static if (is(V == float4))
+            return cast(V)__simd_sto(XMM.STOUPS, *cast(void16*)p, value);
+        else
+            return cast(V)__simd_sto(XMM.STODQU, *cast(void16*)p, value);
+    }
+} // D_SIMD (keep storeUnaligned unittest for LDC)
+
     @system
     unittest
     {
         // Memory to store the vector to:
-        // Should have enough data to test all 512-byte alignments, and still
-        // have room for a 512-byte vector
-        ubyte[1024] data;
+        // Should have enough data to test all 16-byte alignments, and still
+        // have room for a 16-byte vector
+        ubyte[32] data;
 
-        // to test all alignments from 1 ~ 512
-        foreach (i; 0..512)
+        // to test all alignments from 1 ~ 16
+        foreach (i; 0..16)
         {
             ubyte* d = &data[i];
 
@@ -779,48 +755,17 @@ version (DMD_LDC)
                 }
             }
 
-            static string size1Tests(string T)()
-            {
-                string res;
-                res ~= "test!(__vector("~T~"[1]))();";
-                res ~= "test!(__vector("~T~"[2]))();";
-                res ~= "test!(__vector("~T~"[4]))();";
-                return res;
-            }
-
-            static string generalTests(string T, string size)()
-            {
-                string res;
-                res ~= "test!(__vector("~T~"[8 / "~size~"]))();";
-                res ~= "test!(__vector("~T~"[16 / "~size~"]))();";
-                res ~= "test!(__vector("~T~"[32 / "~size~"]))();";
-                res ~= "test!(__vector("~T~"[64 / "~size~"]))();";
-                res ~= "test!(__vector("~T~"[128 / "~size~"]))();";
-                res ~= "test!(__vector("~T~"[256 / "~size~"]))();";
-                res ~= "test!(__vector("~T~"[512 / "~size~"]))();";
-                return res;
-            }
-            mixin(size1Tests!("void")());
-            mixin(size1Tests!("byte")());
-            mixin(size1Tests!("ubyte")());
-
-            test!(__vector(short[2]))();
-            test!(__vector(ushort[2]))();
-
-            mixin(generalTests!("void", "1")());
-            mixin(generalTests!("byte", "1")());
-            mixin(generalTests!("ubyte", "1")());
-
-            mixin(generalTests!("short", "2")());
-            mixin(generalTests!("ushort", "2")());
-
-            mixin(generalTests!("int", "4")());
-            mixin(generalTests!("uint", "4")());
-            mixin(generalTests!("float", "4")());
-
-            mixin(generalTests!("long", "8")());
-            mixin(generalTests!("ulong", "8")());
-            mixin(generalTests!("double", "8")());
+            test!void16();
+            test!byte16();
+            test!ubyte16();
+            test!short8();
+            test!ushort8();
+            test!int4();
+            test!uint4();
+            test!long2();
+            test!ulong2();
+            test!double2();
+            test!float4();
         }
     }
-}
+//} no D_SIMD scope to terminate for LDC
