@@ -10,6 +10,8 @@
 
 module core.runtime;
 
+private import rt.backtrace.execinfo;
+
 version (OSX)
     version = Darwin;
 else version (iOS)
@@ -562,24 +564,12 @@ extern (C) void profilegc_setlogfilename(string name);
 extern (C) UnitTestResult runModuleUnitTests()
 {
     // backtrace
-    version (CRuntime_Glibc)
-        import core.sys.linux.execinfo;
-    else version (Darwin)
-        import core.sys.darwin.execinfo;
-    else version (FreeBSD)
-        import core.sys.freebsd.execinfo;
-    else version (NetBSD)
-        import core.sys.netbsd.execinfo;
-    else version (DragonFlyBSD)
-        import core.sys.dragonflybsd.execinfo;
+    version (Posix)
+        mixin ImportExecinfoPOSIX;
     else version (Windows)
         import core.sys.windows.stacktrace;
-    else version (Solaris)
-        import core.sys.solaris.execinfo;
-    else version (CRuntime_UClibc)
-        import core.sys.linux.execinfo;
 
-    static if ( __traits( compiles, backtrace ) )
+    static if (hasExecinfo)
     {
         import core.sys.posix.signal; // segv handler
 
@@ -798,32 +788,11 @@ unittest
     }
 }
 
-version (CRuntime_Glibc)       version = HasBacktrace;
-else version (Darwin)          version = HasBacktrace;
-else version (FreeBSD)         version = HasBacktrace;
-else version (NetBSD)          version = HasBacktrace;
-else version (DragonFlyBSD)    version = HasBacktrace;
-else version (Solaris)         version = HasBacktrace;
-else version (CRuntime_UClibc) version = HasBacktrace;
-
 /// Default implementation for most POSIX systems
-version (HasBacktrace) private class DefaultTraceInfo : Throwable.TraceInfo
+static if (hasExecinfo) private class DefaultTraceInfo : Throwable.TraceInfo
 {
     // backtrace
-    version (CRuntime_Glibc)
-        import core.sys.linux.execinfo;
-    else version (Darwin)
-        import core.sys.darwin.execinfo;
-    else version (FreeBSD)
-        import core.sys.freebsd.execinfo;
-    else version (NetBSD)
-        import core.sys.netbsd.execinfo;
-    else version (DragonFlyBSD)
-        import core.sys.dragonflybsd.execinfo;
-    else version (Solaris)
-        import core.sys.solaris.execinfo;
-    else version (CRuntime_UClibc)
-        import core.sys.linux.execinfo;
+    mixin ImportExecinfoPOSIX;
 
     import core.demangle;
     import core.stdc.stdlib : free;
@@ -991,7 +960,7 @@ private:
     const(char)[] fixline( const(char)[] buf, return ref char[4096] fixbuf ) const
     {
         size_t symBeg, symEnd;
-        version (Darwin)
+        static if (BacktraceFmt.Darwin)
         {
             // format is:
             //  1  module    0x00000000 D6module4funcAFZv + 0
@@ -1012,16 +981,21 @@ private:
                 }
             }
         }
-        else version (CRuntime_Glibc)
+        else static if (BacktraceFmt.GNU)
         {
             // format is:  module(_D6module4funcAFZv) [0x00000000]
             // or:         module(_D6module4funcAFZv+0x78) [0x00000000]
+            // or:         module(_D6module4funcAFZv-0x78) [0x00000000]
             auto bptr = cast(char*) memchr( buf.ptr, '(', buf.length );
             auto eptr = cast(char*) memchr( buf.ptr, ')', buf.length );
             auto pptr = cast(char*) memchr( buf.ptr, '+', buf.length );
+            auto mptr = cast(char*) memchr( buf.ptr, '-', buf.length );
 
             if (pptr && pptr < eptr)
                 eptr = pptr;
+
+            if (mptr && mptr < eptr)
+                eptr = mptr;
 
             if ( bptr++ && eptr )
             {
@@ -1032,14 +1006,10 @@ private:
         else
         {
             // format is: 0x00000000 <_D6module4funcAFZv+0x78> at module
-            version (FreeBSD)
-                enum StartChar = '<';
-            else version (NetBSD)
-                enum StartChar = '<';
-            else version (DragonFlyBSD)
+            static if (BacktraceFmt.BSD)
                 enum StartChar = '<';
             // format is object'symbol+offset [pc]
-            else version (Solaris)
+            else static if (BacktraceFmt.Solaris)
                 enum StartChar = '\'';
             // fallthrough
             else

@@ -12,6 +12,11 @@
 
 module rt.backtrace.dwarf;
 
+private import rt.backtrace.execinfo;
+
+static if (hasExecinfo)
+{
+
 version (OSX)
     version = Darwin;
 else version (iOS)
@@ -20,14 +25,6 @@ else version (TVOS)
     version = Darwin;
 else version (WatchOS)
     version = Darwin;
-
-version (CRuntime_Glibc) version = has_backtrace;
-else version (FreeBSD) version = has_backtrace;
-else version (DragonFlyBSD) version = has_backtrace;
-else version (CRuntime_UClibc) version = has_backtrace;
-else version (Darwin) version = has_backtrace;
-
-version (has_backtrace):
 
 version (Darwin)
     import rt.backtrace.macho;
@@ -50,11 +47,8 @@ struct Location
 int traceHandlerOpApplyImpl(const(void*)[] callstack, scope int delegate(ref size_t, ref const(char[])) dg)
 {
     import core.stdc.stdio : snprintf;
-    version (linux) import core.sys.linux.execinfo : backtrace_symbols;
-    else version (FreeBSD) import core.sys.freebsd.execinfo : backtrace_symbols;
-    else version (DragonFlyBSD) import core.sys.dragonflybsd.execinfo : backtrace_symbols;
-    else version (Darwin) import core.sys.darwin.execinfo : backtrace_symbols;
     import core.sys.posix.stdlib : free;
+    mixin ImportExecinfoPOSIX;
 
 version (LDC)
 {
@@ -380,36 +374,35 @@ bool runStateMachine(ref const(LineNumberProgram) lp, scope RunStateMachineCallb
 
 const(char)[] getMangledFunctionName(const(char)[] btSymbol)
 {
-    version (linux)
+    static if (BacktraceFmt.GNU)
     {
         // format is:  module(_D6module4funcAFZv) [0x00000000]
         // or:         module(_D6module4funcAFZv+0x78) [0x00000000]
+        // or:         module(_D6module4funcAFZv-0x78) [0x00000000] <-- uClibc
         auto bptr = cast(char*) memchr(btSymbol.ptr, '(', btSymbol.length);
         auto eptr = cast(char*) memchr(btSymbol.ptr, ')', btSymbol.length);
         auto pptr = cast(char*) memchr(btSymbol.ptr, '+', btSymbol.length);
+        auto mptr = cast(char*) memchr(btSymbol.ptr, '-', btSymbol.length);
     }
-    else version (FreeBSD)
+    else static if (BacktraceFmt.BSD)
     {
         // format is: 0x00000000 <_D6module4funcAFZv+0x78> at module
         auto bptr = cast(char*) memchr(btSymbol.ptr, '<', btSymbol.length);
         auto eptr = cast(char*) memchr(btSymbol.ptr, '>', btSymbol.length);
         auto pptr = cast(char*) memchr(btSymbol.ptr, '+', btSymbol.length);
+        auto mptr = null;
     }
-    else version (DragonFlyBSD)
-    {
-        // format is: 0x00000000 <_D6module4funcAFZv+0x78> at module
-        auto bptr = cast(char*) memchr(btSymbol.ptr, '<', btSymbol.length);
-        auto eptr = cast(char*) memchr(btSymbol.ptr, '>', btSymbol.length);
-        auto pptr = cast(char*) memchr(btSymbol.ptr, '+', btSymbol.length);
-    }
-    else version (Darwin)
+    else static if (BacktraceFmt.Darwin)
         return extractSymbol(btSymbol);
 
-    version (Darwin) {}
+    static if (BacktraceFmt.Darwin) {}
     else
     {
         if (pptr && pptr < eptr)
             eptr = pptr;
+
+        if (mptr && mptr < eptr)
+            eptr = mptr;
 
         size_t symBeg, symEnd;
         if (bptr++ && eptr)
@@ -698,3 +691,5 @@ LineNumberProgram readLineNumberProgram(ref const(ubyte)[] data) @nogc nothrow
 
     return lp;
 }
+
+} // hasExecinfo
