@@ -58,9 +58,9 @@ mixin template ImportExecinfoPOSIX()
     {
         version (CRuntime_Glibc)
             import _execinfo = core.sys.linux.execinfo;
-	else version (CRuntime_UClibc)
+        else version (CRuntime_UClibc)
             import _execinfo = core.sys.linux.execinfo;
-	else version (_extExecinfo)
+        else version (_extExecinfo)
             import _execinfo = core.sys.linux.execinfo;
     }
     else version (Darwin)
