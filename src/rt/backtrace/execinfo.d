@@ -1,3 +1,29 @@
+/**
+ * This module helps to decide whether an appropriate execinfo implementation
+ * is available in the underling C runtime or in an external library. In the
+ * latter case exactly one of the following version identifiers should be
+ * set at the time of building druntime.
+ *
+ * Possible external execinfo version IDs based on possible backtrace output
+ * formats:
+ * $(TABLE
+ * $(THEAD Version ID, Backtrace format)
+ * $(TROW $(B ExtExecinfo_BSDFmt), 0x00000000 <_D6module4funcAFZv+0x78> at module)
+ * $(TROW $(B ExtExecinfo_DarwinFmt), 1  module    0x00000000 D6module4funcAFZv + 0)
+ * $(TROW $(B ExtExecinfo_GNUFmt), module(_D6module4funcAFZv) [0x00000000] $(B or)
+ * module(_D6module4funcAFZv+0x78) [0x00000000] $(B or) module(_D6module4funcAFZv-0x78) [0x00000000])
+ * $(TROW $(B ExtExecinfo_SolarisFmt), object'symbol+offset [pc])
+ * )
+ *
+ * The code also ensures that at most one format is selected (either by automatic
+ * C runtime detection or by $(B ExtExecinfo_) version IDs) and stores the
+ * corresponding values in $(LREF BacktraceFmt).
+ *
+ * Copyright: Copyright Digital Mars 2019.
+ * License:   $(HTTP www.boost.org/LICENSE_1_0.txt, Boost License 1.0).
+ * Source: $(DRUNTIMESRC rt/backtrace/execinfo.d)
+ */
+
 module rt.backtrace.execinfo;
 
 version (OSX)
@@ -18,21 +44,13 @@ else version (ExtExecinfo_GNUFmt)
 else version (ExtExecinfo_SolarisFmt)
     version = _extExecinfo;
 
-/** Imports the appropriate execinfo module depending on the actual
+/**
+ * Imports the appropriate execinfo module depending on the actual
  * OS and libc version. If the libc implementation does not include
  * any execinfo methods, it is possible to link with an external
- * execinfo library. In the latter case one of the $(D ExtExecinfo_)
- * version identifier should be set and the corresponding external
+ * execinfo library. In the latter case one of the $(B ExtExecinfo_)
+ * version identifiers should be set and the corresponding external
  * library should be linked with druntime.
- *
- * $(TABLE_2COLS Possible external execinfo version IDs,
- * $(THEAD Version ID, Backtrace format)
- * $(TROW $(D ExtExecinfo_BSDFmt), $(D 0x00000000 <_D6module4funcAFZv+0x78> at module))
- * $(TROW $(D ExtExecinfo_DarwinFmt), $(D 1  module    0x00000000 D6module4funcAFZv + 0))
- * $(TROW $(D ExtExecinfo_GNUFmt), $(D module(_D6module4funcAFZv) [0x00000000]) or
- * $(D module(_D6module4funcAFZv+0x78) [0x00000000]) or $(D module(_D6module4funcAFZv-0x78) [0x00000000]))
- * $(TROW $(D ExtExecinfo_SolarisFmt), $(D object'symbol+offset [pc]))
- * )
  */
 mixin template ImportExecinfoPOSIX()
 {
@@ -55,8 +73,6 @@ mixin template ImportExecinfoPOSIX()
         import _execinfo = core.sys.dragonflybsd.execinfo;
     else version (Solaris)
         import _execinfo = core.sys.solaris.execinfo;
-//    else
-//        enum _execinfo = false; // execinfo is not implemented on this platform
 
     static if (__traits(compiles, _execinfo) && is(_execinfo == module))
     {
@@ -114,24 +130,25 @@ private
         enum _BTFmt_Solaris = false;
 }
 
-/** Indicates the backtrace format of the actual execinfo implementation.
- * At most one of the values is allowed to be set to $(D true) the
- * others should be $(D false).
+/**
+ * Indicates the backtrace format of the actual execinfo implementation.
+ * At most one of the values is allowed to be set to $(D_KEYWORD true) the
+ * others should be $(D_KEYWORD false).
  */
 enum BacktraceFmt : bool
 {
-    /// $(D 0x00000000 <_D6module4funcAFZv+0x78> at module)
+    /// 0x00000000 <_D6module4funcAFZv+0x78> at module
     BSD = _BTFmt_BSD,
 
-    /// $(D 1  module    0x00000000 D6module4funcAFZv + 0)
+    /// 1  module    0x00000000 D6module4funcAFZv + 0
     Darwin = _BTFmt_Darwin,
 
-    /// $(D module(_D6module4funcAFZv) [0x00000000])
-    /// or $(D module(_D6module4funcAFZv+0x78) [0x00000000])
-    /// or $(D module(_D6module4funcAFZv-0x78) [0x00000000])
+    /// module(_D6module4funcAFZv) [0x00000000]
+    /// $(B or) module(_D6module4funcAFZv+0x78) [0x00000000]
+    /// $(B or) module(_D6module4funcAFZv-0x78) [0x00000000]
     GNU = _BTFmt_GNU,
 
-    /// $(D object'symbol+offset [pc])
+    /// object'symbol+offset [pc]
     Solaris = _BTFmt_Solaris
 }
 
