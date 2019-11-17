@@ -229,6 +229,11 @@ enum naked = llvmAttr("naked");
 enum restrict = llvmAttr("noalias");
 
 /**
+ * Adds LLVM's "cold" attribute to a function, marks function as being in a cold path.
+ */
+enum cold = llvmAttr("cold");
+
+/**
  * Sets the optimization strategy for a function.
  * Valid strategies are "none", "optsize", "minsize". The strategies are mutually exclusive.
  *
