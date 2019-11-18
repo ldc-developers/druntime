@@ -1046,7 +1046,7 @@ else
 
 version (LDC)
 {
-    version (linux_PPC)
+    version (linux_PPC_Any)
     {
         extern(C) void* __tls_get_addr_opt(tls_index* ti) nothrow @nogc;
     else
