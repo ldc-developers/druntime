@@ -43,10 +43,11 @@ else
             import ldc.llvmasm;
             __asm("str x29, $0", "=*m", &p);
         }
-        else version (PPC64) { // LDC
+        else version (PPC64) // LDC
+        {
            import ldc.llvmasm;
            __asm("stdu %r1,-144(%r1)", "=*m", &p);
-       } 
+        } 
         else
 
             static assert(false, "Architecture not supported.");
