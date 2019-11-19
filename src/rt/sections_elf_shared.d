@@ -18,9 +18,6 @@ else version (DragonFlyBSD) enum SharedELF = true;
 else version (CRuntime_UClibc) enum SharedELF = true;
 else enum SharedELF = false;
 
-version (linux) version (PPC) version = (linux_PPC_Any);
-version (linux) version (PPC64) version = (linux_PPC_Any);
-    
 version (OSX) enum SharedDarwin = true;
 else enum SharedDarwin = false;
 
@@ -1046,9 +1043,14 @@ else
 
 version (LDC)
 {
+
+version (linux) version (PPC) version = (linux_PPC_Any);
+version (linux) version (PPC64) version = (linux_PPC_Any);
+    
     version (linux_PPC_Any)
     {
         extern(C) void* __tls_get_addr_opt(tls_index* ti) nothrow @nogc;
+    }
     else
         extern(C) void* __tls_get_addr(tls_index* ti) nothrow @nogc;
 }
