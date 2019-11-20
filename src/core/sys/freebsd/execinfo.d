@@ -46,7 +46,7 @@ else
         else version (PPC64) // LDC
         {
            import ldc.llvmasm;
-           __asm("stdu %r1,-144(%r1)", "=*m", &p);
+           __asm("stdu %r1, $0", "=*m", &p);
         } 
         else
 
