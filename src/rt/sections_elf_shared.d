@@ -1044,12 +1044,12 @@ else
 version (LDC)
 {
 
-version (linux) version (PPC) version = (linux_PPC_Any);
-version (linux) version (PPC64) version = (linux_PPC_Any);
-    
+    version (linux) version (PPC) version = (linux_PPC_Any);
+    version (linux) version (PPC64) version = (linux_PPC_Any);
     version (linux_PPC_Any)
     {
         extern(C) void* __tls_get_addr_opt(tls_index* ti) nothrow @nogc;
+        alias __tls_get_addr = __tls_get_addr_opt;
     }
     else
         extern(C) void* __tls_get_addr(tls_index* ti) nothrow @nogc;
