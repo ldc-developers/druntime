@@ -229,7 +229,9 @@ enum naked = llvmAttr("naked");
 enum restrict = llvmAttr("noalias");
 
 /**
- * Adds LLVM's "cold" attribute to a function, marks function as being in a cold path.
+ * Adds LLVM's "cold" attribute to a function, indicating that this function is
+ * rarely called. Control-flow paths calling cold functions are thus considered
+ * to be cold too.
  */
 enum cold = llvmAttr("cold");
 
