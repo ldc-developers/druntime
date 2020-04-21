@@ -2515,6 +2515,16 @@ else
                        sd $$22, 48($0);
                        sd $$23, 56($0)`, "r", regs.ptr);
             }
+            else version (SystemZ)
+            {
+                import ldc.llvmasm;
+
+                // Callee-save registers, according to S/390 ELF Application
+                // Binary Interface Supplement, chapter 1, page 9.
+                size_t[9] regs = void;
+                __asm(`stm %r6, %r13, $0;
+                       st %r15, 64+$0`, "=*m", regs.ptr);
+            }
             else
             {
                 static assert(false, "Architecture not supported.");
@@ -3261,6 +3271,10 @@ private void* getStackTop() nothrow
         else version (MIPS64)
         {
             return __asm!(void *)("move $0, $$sp", "=r");
+        }
+        else version (SystemZ)
+        {
+            return __asm!(void *)("lr $0, %r15", "=r");
         }
         else
         {

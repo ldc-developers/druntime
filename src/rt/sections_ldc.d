@@ -330,6 +330,7 @@ private
             }
 
             extern(C) void* __tls_get_addr(tls_index* ti);
+            extern(C) void* __tls_get_addr_internal(tls_index* ti);
 
             /* The dynamic thread vector (DTV) pointers may point 0x8000 past the start of
              * each TLS block. This is at least true for PowerPC and Mips platforms.
@@ -349,7 +350,17 @@ private
             {
                 if (pdso._tlsMod == 0) return null;
                 auto ti = tls_index(pdso._tlsMod, 0);
-                return (__tls_get_addr(&ti)-TLS_DTV_OFFSET)[0 .. pdso._tlsSize];
+                version (SystemZ)
+                {
+                    import ldc.llvmasm;
+                    auto adr = cast(void *)__tls_get_addr_internal(&ti)
+                               + __asm!ulong("ear $0,%a0; sllg $0,$0,32; ear $0,%a1", "=r");
+                    return adr[0 .. pdso._tlsSize];
+                }
+                else
+                {
+                    return (__tls_get_addr(&ti)-TLS_DTV_OFFSET)[0 .. pdso._tlsSize];
+                }
             }
         }
     }
