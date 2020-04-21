@@ -20,34 +20,18 @@ void main()
 {
     auto test_fiber = new Fiber(&stackMethod, stackSize);
 
-    auto getPrivateFiberField(string id)()
-    {
-        static size_t getIndex(string id)()
-        {
-            static foreach (i, field; Fiber.tupleof)
-            {
-                static if (field.stringof == id)
-                    return i;
-            }
-            assert(0);
-        }
-
-        enum i = getIndex!id();
-        return test_fiber.tupleof[i];
-    }
-
     // allocate a page below (above) the fiber's stack to make stack overflows possible (w/o segfaulting)
     version (StackGrowsDown)
     {
-        auto stackBottom = getPrivateFiberField!"m_pmem"();
+        auto stackBottom = __traits(getMember, test_fiber, "m_pmem");
         auto p = mmap(stackBottom - 8 * stackSize, 8 * stackSize,
                       PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
         assert(p !is null, "failed to allocate page");
     }
     else
     {
-        auto m_sz = getPrivateFiberField!"m_sz"();
-        auto m_pmem = getPrivateFiberField!"m_pmem"();
+        auto m_sz = __traits(getMember, test_fiber, "m_sz");
+        auto m_pmem = __traits(getMember, test_fiber, "m_pmem");
 
         auto stackTop = m_pmem + m_sz;
         auto p = mmap(stackTop, 8 * stackSize,
